@@ -1,10 +1,11 @@
-﻿using C3D.Extensions.Aspire.VisualStudioDebug.Annotations;
-using Microsoft.AspNetCore.Mvc.Filters;
+﻿using Aspire.Hosting;
+using Aspire.Hosting.ApplicationModel;
+using C3D.Extensions.Aspire.VisualStudioDebug.Annotations;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 
-namespace AspireAppHostNodeJS;
+namespace C3D.Extensions.Aspire.Node;
 
 partial class NodeDebugHook : BackgroundService
 {
@@ -26,13 +27,11 @@ partial class NodeDebugHook : BackgroundService
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        IEnumerable<Task> tasks = model.GetExecutableResources()
+        var tasks = model.GetExecutableResources()
             .OfType<NodeAppResource>()
             .Select(r => WatchResourceAsync(r, stoppingToken))
-            .ToList();
-
+            .ToArray();
         Task.WaitAll(tasks, stoppingToken);
-
         return Task.CompletedTask;
     }
 

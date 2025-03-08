@@ -1,8 +1,9 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Aspire.Hosting.ApplicationModel;
+using Microsoft.Extensions.Hosting;
 
 namespace Aspire.Hosting;
 
-internal static class NodeHostingExtensions
+public static class NodeHostingExtensions
 {
     /// <summary>
     /// Injects the ASP.NET Core HTTPS developer certificate into the resource via the specified environment variables when

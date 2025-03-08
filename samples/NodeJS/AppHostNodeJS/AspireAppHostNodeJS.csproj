@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Sdk Name="Aspire.AppHost.Sdk" Version="9.1.0" />
 
@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\C3D\Extensions\Aspire\VisualStudioDebug\C3D.Extensions.Aspire.VisualStudioDebug.csproj" IsAspireProjectResource="false" />
+    <ProjectReference Include="..\..\..\src\C3D\Extensions\Aspire\Node\C3D.Extensions.Aspire.Node.csproj" IsAspireProjectResource="false" />
     <ProjectReference Include="..\ExpressProject\ExpressProject.esproj" />
     <ProjectReference Include="..\NodeConsoleApp\NodeConsoleApp.esproj" />
   </ItemGroup>
