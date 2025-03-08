@@ -1,5 +1,9 @@
+require('./intrumentation'); // Ensure this is imported before other modules
+
 var express = require('express');
 var app = express();
+//var otlp = require('./intrumentation');
+
 app.get('/', function (req, res) {
     res.send('Hello World!');
 });
