@@ -1,30 +1,58 @@
-/*instrumentation.js*/
-const opentelemetry = require('@opentelemetry/sdk-node');
-const {
-    getNodeAutoInstrumentations,
-} = require('@opentelemetry/auto-instrumentations-node');
-const {
-    OTLPTraceExporter,
-} = require('@opentelemetry/exporter-trace-otlp-proto');
-const {
-    OTLPMetricExporter,
-} = require('@opentelemetry/exporter-metrics-otlp-proto');
-const { PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
+import { env } from 'node:process';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-grpc';
+import { SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
+import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
+import { credentials } from '@grpc/grpc-js';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 
-const sdk = new opentelemetry.NodeSDK({
-    traceExporter: new OTLPTraceExporter({
-        // optional - default url is http://localhost:4318/v1/traces
-        //url:  '<your-otlp-endpoint>/v1/traces',
-        // optional - collection of custom headers to be sent with each request, empty by default
-        headers: {},
-    }),
-    metricReader: new PeriodicExportingMetricReader({
-        exporter: new OTLPMetricExporter({
-            //url: '<your-otlp-endpoint>/v1/metrics', // url is optional and can be omitted - default is http://localhost:4318/v1/metrics
-            headers: {}, // an optional object containing custom headers to be sent with each request
-            concurrencyLimit: 1, // an optional limit on pending requests
+const environment = process.env.NODE_ENV || 'development';
+
+// For troubleshooting, set the log level to DiagLogLevel.DEBUG
+//diag.setLogger(new DiagConsoleLogger(), environment === 'development' ? DiagLogLevel.INFO : DiagLogLevel.WARN);
+
+const otlpServer = env.OTEL_EXPORTER_OTLP_ENDPOINT;
+
+if (otlpServer) {
+    console.log(`OTLP endpoint: ${otlpServer}`);
+
+    const isHttps = otlpServer.startsWith('https://');
+    const collectorOptions = {
+        credentials: !isHttps
+            ? credentials.createInsecure()
+            : credentials.createSsl()
+    };
+
+    const sdk = new NodeSDK({
+        traceExporter: new OTLPTraceExporter(collectorOptions),
+        metricReader: new PeriodicExportingMetricReader({
+            exportIntervalMillis: environment === 'development' ? 5000 : 10000,
+            exporter: new OTLPMetricExporter(collectorOptions),
         }),
-    }),
-    instrumentations: [getNodeAutoInstrumentations()],
-});
-sdk.start();
+        logRecordProcessor: new SimpleLogRecordProcessor({
+            exporter: new OTLPLogExporter(collectorOptions)
+        }),
+        instrumentations:
+            //getNodeAutoInstrumentations()
+        [
+            new HttpInstrumentation(),
+            new ExpressInstrumentation()
+        ]
+        ,
+    });
+
+    sdk.start();
+
+    // gracefully shut down the SDK on process exit
+    process.on('SIGTERM', () => {
+        sdk.shutdown()
+            .then(() => console.log('Tracing terminated'))
+            .catch((error) => console.log('Error terminating tracing', error))
+            .finally(() => process.exit(0));
+    });
+}
