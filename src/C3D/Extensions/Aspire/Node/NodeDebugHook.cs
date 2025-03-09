@@ -29,6 +29,7 @@ partial class NodeDebugHook : BackgroundService
     {
         var tasks = model.GetExecutableResources()
             .OfType<NodeAppResource>()
+            .Where(r=>r.HasAnnotationOfType<VisualStudioDebug.Annotations.DebugAttachAnnotation>())
             .Select(r => WatchResourceAsync(r, stoppingToken))
             .ToArray();
         Task.WaitAll(tasks, stoppingToken);
@@ -37,11 +38,15 @@ partial class NodeDebugHook : BackgroundService
 
     private async Task WatchResourceAsync(NodeAppResource resource, CancellationToken stoppingToken)
     {
+        logger.LogInformation("Waiting for debug connection string for {resource}", resource.Name);
+
         var regex = DetectDebuggerUrl();
         await foreach (var batch in resourceLoggerService.WatchAsync(resource).WithCancellation(stoppingToken))
         {
             foreach (var logLine in batch)
             {
+                logger.LogDebug("{resource}: {line}", resource.Name, logLine);
+
                 var match = regex.Match(logLine.Content);
                 if (match.Success)
                 {

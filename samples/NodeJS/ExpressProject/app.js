@@ -59,6 +59,7 @@ async function healthCheck() {
     }
 }
 app.get('/', function (req, res) {
+    // As an example - put a breakpoint on the next line
     res.send('Hello World!');
 });
 // Start a server
