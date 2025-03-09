@@ -9,6 +9,7 @@ namespace C3D.Extensions.Aspire.Node;
 
 partial class NodeDebugHook : BackgroundService
 {
+    private const string connectionStringPropertyName = "debug.v8.connectionString";
     private readonly ILogger<NodeDebugHook> logger;
     private readonly ResourceNotificationService resourceNotificationService;
     private readonly ResourceLoggerService resourceLoggerService;
@@ -25,15 +26,14 @@ partial class NodeDebugHook : BackgroundService
         this.model = model;
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var tasks = model.GetExecutableResources()
             .OfType<NodeAppResource>()
-            .Where(r=>r.HasAnnotationOfType<VisualStudioDebug.Annotations.DebugAttachAnnotation>())
+            .Where(r => r.HasAnnotationOfType<VisualStudioDebug.Annotations.DebugAttachAnnotation>())
             .Select(r => WatchResourceAsync(r, stoppingToken))
             .ToArray();
-        Task.WaitAll(tasks, stoppingToken);
-        return Task.CompletedTask;
+        await Task.WhenAll(tasks);
     }
 
     private async Task WatchResourceAsync(NodeAppResource resource, CancellationToken stoppingToken)
@@ -41,6 +41,8 @@ partial class NodeDebugHook : BackgroundService
         logger.LogInformation("Waiting for debug connection string for {resource}", resource.Name);
 
         var regex = DetectDebuggerUrl();
+        var debugAnnotation = resource.Annotations.OfType<DebugAttachAnnotation>().Last();
+
         await foreach (var batch in resourceLoggerService.WatchAsync(resource).WithCancellation(stoppingToken))
         {
             foreach (var logLine in batch)
@@ -52,12 +54,32 @@ partial class NodeDebugHook : BackgroundService
                 {
                     var url = match.Groups["url"].Value!;
                     logger.LogInformation("Debugger connection string {url}", url);
+                    if (debugAnnotation.DebuggerProcessId is not null)
+                    {
+                        logger.LogWarning("Previously Debugged");
+                        debugAnnotation.DebuggerProcessId = null;
+                    }
                     resource.Annotations.Add(new DebugAttachTransportAnnotation()
                     {
-                        Transport = "JavaScript and TypeScript (Chrome DevTools/V8 Inspector)",
+                        Transport = VisualStudioDebug.WellKnown.Transports.V8Inspector,
                         Qualifier = url
                     });
-                    return;
+                    debugAnnotation.Skip = false;
+                    await resourceNotificationService.PublishUpdateAsync(resource, state =>
+                    {
+                        var old = state.Properties.SingleOrDefault(rps => rps.Name == connectionStringPropertyName);
+                        ResourcePropertySnapshot cs = new(connectionStringPropertyName, url);
+                        if (old is null)
+                        {
+                            state.Properties.Add(cs);
+                        }
+                        else
+                        {
+                            state.Properties.Replace(old, cs);
+                        }
+                        return state;
+                    });
+                    //return;
                 }
             }
         }
