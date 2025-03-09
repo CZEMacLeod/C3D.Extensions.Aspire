@@ -112,6 +112,7 @@ public static class NodeDebugExtensions
                 .WithDebugger(DebugMode.VisualStudio)
                 .WithDebugEngine(Engines.JavaScript)
                 .WithDebugSkip()    // we skip debugging until we have applied the transport and qualifier
+                .WithDebuggerHealthcheck()
                 ;
         }
         return builder;

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/Nerdbank.GitVersioning/v3.3.37/src/NerdBank.GitVersioning/version.schema.json",
+  "version": "0.1",
+  "pathFilters": [
+    ".",
+    "../Directory.Build.props",
+    "../Directory.Build.targets",
+    "../../VisualStudioDebug",
+    "../VisualStudioDebug"
+  ],
+  "publicReleaseRefSpec": [
+    "^refs/heads/main$", // we release out of main
+    "^refs/heads/rel/v\\d+\\.\\d+" // we also release tags starting with rel/N.N
+  ],
+  "nugetPackageVersion": {
+    "semVer": 2
+  },
+  "cloudBuild": {
+    "buildNumber": {
+      "enabled": true
+    }
+  },
+  "buildNumberOffset": 1
+}
