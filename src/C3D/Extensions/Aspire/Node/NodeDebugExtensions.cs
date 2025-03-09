@@ -24,6 +24,17 @@ public static class NodeDebugExtensions
         return builder.AddNodeApp(name, path, prjPath, args);
     }
 
+    public static IResourceBuilder<NodeAppResource> AddNpmApp<TProject>(
+        this IDistributedApplicationBuilder builder,
+        string name, string scriptName = "start", params string[] args)
+    where TProject : IProjectMetadata, new()
+    {
+        var prj = new TProject();
+        var prjPath = System.IO.Path.GetDirectoryName(prj.ProjectPath)!;
+
+        return builder.AddNpmApp(name, prjPath, scriptName, args);
+    }
+
     public static IResourceBuilder<NodeAppResource> WithNodeOption(this IResourceBuilder<NodeAppResource> builder,
         string option) =>
         builder.WithNodeOptions().WithAnnotation(NodeOptionAnnotation.Create(option));
@@ -99,8 +110,9 @@ public static class NodeDebugExtensions
                 .WithEndpoint(scheme: "ws", name: "debug", isExternal: false)
                 .WithNodeOption(inspect)
                 .WithDebugger(DebugMode.VisualStudio)
-                .WithDebugTransport(Transports.V8Inspector)
-                .WithDebugEngine(Engines.JavaScript);
+                .WithDebugEngine(Engines.JavaScript)
+                .WithDebugSkip()    // we skip debugging until we have applied the transport and qualifier
+                ;
         }
         return builder;
     }
