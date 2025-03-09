@@ -34,6 +34,9 @@ Please see the individual package readmes for more information.
 [![NuGet package](https://img.shields.io/nuget/v/C3D.Extensions.Aspire.SystemWebAdapters.svg)](https://nuget.org/packages/C3D.Extensions.SystemWebAdapters.Fluent)
 [![NuGet downloads](https://img.shields.io/nuget/dt/C3D.Extensions.Aspire.SystemWebAdapters.svg)](https://nuget.org/packages/C3D.Extensions.SystemWebAdapters.Fluent)
 
+> [!WARNING]  
+> I am not a node developer and the support is currently pretty basic. 
+> This is mainly to test and demonstrate using the `VisualStudioDebug` packages to connect with alternate transports and debug engines.
 
 # Support Packages
 
@@ -71,6 +74,19 @@ This consists of a Full Framework example app using MVC, with some of the code f
 The Core app is lightweight and only contains YARP, a Session variable route (per the RemoteSession example), OTLP telemetry, and HeathChecks.
 Apire sets up a randomized app key used by both applications, and wires up the Urls for YARP etc.
 Traces show the request span of the core app, the proxy request, and the framework processing.
+
+## Node
+This shows using Aspire to develop a simple Node / Express based application with full debugging support while using Aspire.
+Simply set a breakpoint in `app.js` such as on line 62 - the delegate body.
+```js
+app.get('/', function (req, res) {
+    res.send('Hello World!');
+});
+```
+Set the Startup Project to `AspireAppHostNodeJS` and start the project.
+
+> [!WARNING]  
+> I am not a node developer and the example application is hacked together from examples from the [opentelemetry](https://github.com/open-telemetry/opentelemetry-js) and [aspire-samples](https://github.com/dotnet/aspire-samples) repositories.
 
 ## WaitForConsole
 This shows how to use the WaitForOutput package to wait for a console app to output a specific message before starting another process.
