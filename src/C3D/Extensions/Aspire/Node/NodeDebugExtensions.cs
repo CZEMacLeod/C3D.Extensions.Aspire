@@ -1,15 +1,18 @@
 ﻿using Aspire.Hosting.ApplicationModel;
 using C3D.Extensions.Aspire.Node;
 using C3D.Extensions.Aspire.Node.Annotations;
+using C3D.Extensions.Aspire.OutputWatcher;
 using C3D.Extensions.Aspire.VisualStudioDebug;
+using C3D.Extensions.Aspire.VisualStudioDebug.Annotations;
 using C3D.Extensions.Aspire.VisualStudioDebug.WellKnown;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 
 namespace Aspire.Hosting;
 
-public static class NodeDebugExtensions
+public static partial class NodeDebugExtensions
 {
     private const string node_options_env = "NODE_OPTIONS";
 
@@ -24,16 +27,16 @@ public static class NodeDebugExtensions
         return builder.AddNodeApp(name, path, prjPath, args);
     }
 
-    public static IResourceBuilder<NodeAppResource> AddNpmApp<TProject>(
-        this IDistributedApplicationBuilder builder,
-        string name, string scriptName = "start", params string[] args)
-    where TProject : IProjectMetadata, new()
-    {
-        var prj = new TProject();
-        var prjPath = System.IO.Path.GetDirectoryName(prj.ProjectPath)!;
+    //public static IResourceBuilder<NodeAppResource> AddNpmApp<TProject>(
+    //    this IDistributedApplicationBuilder builder,
+    //    string name, string scriptName = "start", params string[] args)
+    //where TProject : IProjectMetadata, new()
+    //{
+    //    var prj = new TProject();
+    //    var prjPath = System.IO.Path.GetDirectoryName(prj.ProjectPath)!;
 
-        return builder.AddNpmApp(name, prjPath, scriptName, args);
-    }
+    //    return builder.AddNpmApp(name, prjPath, scriptName, args);
+    //}
 
     public static IResourceBuilder<NodeAppResource> WithNodeOption(this IResourceBuilder<NodeAppResource> builder,
         string option) =>
@@ -96,12 +99,15 @@ public static class NodeDebugExtensions
             resourceBuilder.AppendLiteral(" ");
     }
 
+    private const string connectionStringPropertyName = "debug.v8.connectionString";
+    private const string debugWatcherKey = "debugUrl";
+
     public static IResourceBuilder<NodeAppResource> WithDebugger(this IResourceBuilder<NodeAppResource> builder)
     {
         if (builder.ApplicationBuilder.Environment.IsDevelopment() &&
             builder.ApplicationBuilder.ExecutionContext.IsRunMode)
         {
-            builder.ApplicationBuilder.Services.AddHostedService<NodeDebugHook>();
+            //builder.ApplicationBuilder.Services.AddHostedService<NodeDebugHook>();
 
             var ep = builder.GetEndpoint("debug").Property(EndpointProperty.TargetPort);
             var inspect = ReferenceExpression.Create($"--inspect-wait={ep}");
@@ -113,10 +119,54 @@ public static class NodeDebugExtensions
                 .WithDebugEngine(Engines.JavaScript)
                 .WithDebugSkip()    // we skip debugging until we have applied the transport and qualifier
                 .WithDebuggerHealthcheck()
+                .WithOutputWatcher(GetDebugRegex(), key: debugWatcherKey)
                 ;
+
+            builder.ApplicationBuilder.Eventing.Subscribe<OutputMatchedEvent>(UpdateDebugInformation);
         }
         return builder;
     }
+
+    private static async Task UpdateDebugInformation(OutputMatchedEvent @event, CancellationToken token)
+    {
+        if (@event.Key == debugWatcherKey)
+        {
+            var url = @event.Properties["url"].ToString()!;
+            var debugAnnotation = @event.Resource.Annotations.OfType<DebugAttachAnnotation>().Last();
+            var logger = @event.ServiceProvider.GetRequiredService<ILogger<NodeAppResource>>();
+            logger.LogInformation("Debugger connection string {url}", url);
+            if (debugAnnotation.DebuggerProcessId is not null)
+            {
+                logger.LogWarning("Previously Debugged");
+                debugAnnotation.DebuggerProcessId = null;
+            }
+            @event.Resource.Annotations.Add(new DebugAttachTransportAnnotation()
+            {
+                Transport = C3D.Extensions.VisualStudioDebug.WellKnown.Transports.V8Inspector,
+                Qualifier = url
+            });
+            debugAnnotation.Skip = false;
+            var resourceNotificationService = @event.ServiceProvider.GetRequiredService<ResourceNotificationService>();
+            await resourceNotificationService.PublishUpdateAsync(@event.Resource, state =>
+            {
+                var old = state.Properties.SingleOrDefault(rps => rps.Name == connectionStringPropertyName);
+                ResourcePropertySnapshot cs = new(connectionStringPropertyName, url);
+                if (old is null)
+                {
+                    state.Properties.Add(cs);
+                }
+                else
+                {
+                    state.Properties.Replace(old, cs);
+                }
+                return state;
+            });
+        }
+
+    }
+
+    [GeneratedRegex("^(?:(Debugger listening on))\\s(?<url>.*)$", RegexOptions.ExplicitCapture | RegexOptions.Singleline)]
+    private static partial Regex GetDebugRegex();
 
     public static IResourceBuilder<NodeAppResource> WithWatch(this IResourceBuilder<NodeAppResource> builder)
     {

@@ -4,6 +4,7 @@
     <TargetFrameworks>net8.0-windows;net9.0-windows</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyTitle>$(AssemblyTitle) Node</AssemblyTitle>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\OutputWatcher\C3D.Extensions.Aspire.OutputWatcher.csproj" />
     <ProjectReference Include="..\VisualStudioDebug\C3D.Extensions.Aspire.VisualStudioDebug.csproj" />
   </ItemGroup>
   
