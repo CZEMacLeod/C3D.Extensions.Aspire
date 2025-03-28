@@ -1,4 +1,5 @@
-﻿using Aspire.Hosting.ApplicationModel;
+﻿using Aspire.Hosting;
+using Aspire.Hosting.ApplicationModel;
 using C3D.Extensions.Aspire.IISExpress.Annotations;
 using C3D.Extensions.Aspire.IISExpress.Configuration;
 using C3D.Extensions.Aspire.IISExpress.Resources;
@@ -39,7 +40,7 @@ internal class IISEndPointConfigurator
         }
     }
 
-    private static void AddBindings(IISExpressProjectResource project, SiteArgumentAnnotation site, ConfigArgumentAnnotation cfg)
+    private void AddBindings(IISExpressProjectResource project, SiteArgumentAnnotation site, ConfigArgumentAnnotation cfg)
     {
         var siteConfig = GetSiteConfig(cfg.ApplicationHostConfig, site.Site);
 
@@ -50,10 +51,23 @@ internal class IISEndPointConfigurator
 
         if (siteConfig is not null)
         {
+            if (project.TryGetLastAnnotation<IProjectMetadata>(out var metadata))
+            {
+                var sitePath = siteConfig.Application.VirtualDirectory.PhysicalPath;
+                var projectPath = System.IO.Path.GetDirectoryName(metadata.ProjectPath);
+                if (!sitePath.Equals(projectPath))
+                {
+                    logger.LogWarning("Site {Site} physical path {SitePath} does not match project path {ProjectPath}", site.Site, sitePath, projectPath);
+                }
+            }
             foreach (var binding in siteConfig.Bindings)
             {
                 AddBinding(project, binding);
             }
+        }
+        else
+        {
+            logger.LogError("Site {Site} not found in {AppHostConfig}", site.Site, cfg.ApplicationHostConfig);
         }
     }
 
