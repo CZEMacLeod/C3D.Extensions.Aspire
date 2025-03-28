@@ -43,6 +43,11 @@ internal class IISEndPointConfigurator
     {
         var siteConfig = GetSiteConfig(cfg.ApplicationHostConfig, site.Site);
 
+        if (!project.HasAnnotationOfType<AppPoolArgumentAnnotation>())
+        {
+            project.Annotations.Add(new AppPoolArgumentAnnotation(siteConfig?.Application.ApplicationPool ?? AppPoolArgumentAnnotation.DefaultAppPool));
+        }
+
         if (siteConfig is not null)
         {
             foreach (var binding in siteConfig.Bindings)

@@ -76,7 +76,7 @@ public static class IISExpressEntensions
 
         var resourceBuilder = builder.AddResource(resource)
             .WithAnnotation(app)
-            .WithAnnotation(new AppPoolArgumentAnnotation())
+            //.WithAnnotation(new AppPoolArgumentAnnotation())
             .WithAnnotation(new SiteArgumentAnnotation(appName))
             .WithArgs(c =>
                 {
