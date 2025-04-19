@@ -9,7 +9,7 @@ namespace EF6WebApp
         public static void RegisterBundles(BundleCollection bundles)
         {
             bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
-                        "~/lib/jquery/jquery-{version}.js"));
+                        "~/lib/jquery/jquery.js"));
 
             bundles.Add(new ScriptBundle("~/bundles/jqueryval").Include(
                         "~/lib/jquery-validate/jquery.validate.js*").Include(

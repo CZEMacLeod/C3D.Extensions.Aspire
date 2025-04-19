@@ -8,10 +8,22 @@ using System.Web.Routing;
 using C3D.Extensions.SystemWeb.OpenTelemetry.Application;
 using OpenTelemetry.Resources;
 
+[assembly: PreApplicationStartMethod(typeof(SWAFramework.MvcApplication), nameof(SWAFramework.MvcApplication.WaitForDebugger))]
+
 namespace SWAFramework;
 
 public class MvcApplication : OpenTelemeteryApplication
 {
+    public static void WaitForDebugger()
+    {
+        if (string.IsNullOrEmpty(ConfigurationManager.AppSettings["WaitForDebugger"])) return;
+
+        var timeout = DateTime.UtcNow.AddSeconds(30);
+        while (!System.Diagnostics.Debugger.IsAttached && DateTime.UtcNow<timeout)
+        {
+            System.Threading.Thread.Sleep(100);
+        }
+    }
 
     protected override void Application_Start()
     {

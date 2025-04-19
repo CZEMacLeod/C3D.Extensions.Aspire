@@ -31,7 +31,7 @@ internal static class DTEExtensions
         else
         {
             port = debugger.Transports.Item(transport);
-            if (port.Name!= transport)
+            if (!string.Equals(port.Name,transport, StringComparison.OrdinalIgnoreCase))
             {
                 Debug.WriteLine($"Transport {transport} does not match returned object {port.Name} {port.ID}");
                 port = null;

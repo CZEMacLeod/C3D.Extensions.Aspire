@@ -111,7 +111,7 @@ public static class IISExpressEntensions
             {
                 if (resourceBuilder.Resource.TryGetLastAnnotation<SystemWebAdaptersAnnotation>(out var swa))
                 {
-                    c.EnvironmentVariables[swa.EnvNameUrl] = swa.Key.ToString();
+                    c.EnvironmentVariables[swa.EnvNameKey] = swa.Key.ToString();
                 }
             });
 
