@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
+﻿using System.Configuration;
 using System.Linq;
-using System.Web;
 using System.Web.Mvc;
 
 namespace SWAFramework.Controllers
@@ -37,6 +34,7 @@ namespace SWAFramework.Controllers
             ViewBag.Message = $"RemoteApp Key {ConfigurationManager.AppSettings["RemoteApp:ApiKey"]}";
             var dict = System.Environment.GetEnvironmentVariables()
                 .Keys.Cast<string>()
+                .Where(k => k.StartsWith("OTEL_") || k.StartsWith("RemoteApp_") || k.StartsWith("DOTNET_"))
                 .ToDictionary(k => k, k => System.Environment.GetEnvironmentVariable(k));
             return View(dict);
         }
