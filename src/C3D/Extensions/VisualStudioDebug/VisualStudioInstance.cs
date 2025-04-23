@@ -132,42 +132,42 @@ public class VisualStudioInstance : IDisposable
             },
             engines);
 
-
     private void AttachVisualStudioToProcess(Func<DTE, (Transport transport, DTEProcess? process)> applicationProcess, params string[] engines)
-    {
-        // Register the message filter scoped to this method
-        using var filter = new MessageFilter(logger);
-
-        // Find the process you want the VS instance to attach to...
-        var (transport, process) = applicationProcess(dte);
-
-        // Attach to the process.
-        if (process != null)
+        => STAHelper.Run(() =>
         {
-            Engine[] resolvedEngines;
-            try
+            // Register the message filter scoped to this method
+            using var filter = new MessageFilter(logger);
+
+            // Find the process you want the VS instance to attach to...
+            var (transport, process) = applicationProcess(dte);
+
+            // Attach to the process.
+            if (process != null)
             {
-                resolvedEngines = transport.ResolveDebugEngines(engines).ToArray();
-            }
-            catch (Exception e)
-            {
-                logger.LogError("Failed to resolve engines {engines}", engines);
-                throw new ArgumentException("Failed to resolve engines", nameof(engines), e);
-            }
-            if (resolvedEngines.Length == 0)
-            {
-                process.Attach();
+                Engine[] resolvedEngines;
+                try
+                {
+                    resolvedEngines = transport.ResolveDebugEngines(engines).ToArray();
+                }
+                catch (Exception e)
+                {
+                    logger.LogError("Failed to resolve engines {engines}", engines);
+                    throw new ArgumentException("Failed to resolve engines", nameof(engines), e);
+                }
+                if (resolvedEngines.Length == 0)
+                {
+                    process.Attach();
+                }
+                else
+                {
+                    process.Attach2(resolvedEngines);
+                }
             }
             else
             {
-                process.Attach2(resolvedEngines);
+                throw new InvalidOperationException("Visual Studio cannot find specified application");
             }
-        }
-        else
-        {
-            throw new InvalidOperationException("Visual Studio cannot find specified application");
-        }
-    }
+        });
 
     protected virtual void Dispose(bool disposing)
     {
@@ -234,7 +234,7 @@ public class VisualStudioInstance : IDisposable
         int IMessageFilter.RetryRejectedCall(System.IntPtr
             hTaskCallee, int dwTickCount, int dwRejectType)
         {
-            logger.LogWarning("RetryRejectedCall {callee} {tickCount} {rejectType}", hTaskCallee, dwTickCount, dwRejectType);
+            logger.LogTrace("RetryRejectedCall {callee} {tickCount} {rejectType}", hTaskCallee, dwTickCount, dwRejectType);
             if (dwRejectType == 2)
             // flag = SERVERCALL_RETRYLATER.
             {
@@ -249,7 +249,7 @@ public class VisualStudioInstance : IDisposable
         int IMessageFilter.MessagePending(System.IntPtr hTaskCallee,
             int dwTickCount, int dwPendingType)
         {
-            logger.LogInformation("MessagePending {callee} {tickCount} {pendingType}", hTaskCallee, dwTickCount, dwPendingType);
+            logger.LogTrace("MessagePending {callee} {tickCount} {pendingType}", hTaskCallee, dwTickCount, dwPendingType);
             //Return the flag PENDINGMSG_WAITDEFPROCESS.
             return 2;
         }
