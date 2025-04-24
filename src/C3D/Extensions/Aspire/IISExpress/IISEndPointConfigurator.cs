@@ -72,13 +72,13 @@ internal class IISEndPointConfigurator
             project.TryGetEndpoints(out var endpoints) &&
             endpoints.Any(ep => ep.UriScheme == "https"))
         {
-            await ConfigureHttpsCertificate(cert, endpoints);
+            await ConfigureHttpsCertificate(project, cert, endpoints);
         }
     }
 
     private static readonly Guid netshappid = Guid.Parse("{214124cd-d05b-4309-9af9-9caa44b2b74a}");
 
-    private async Task ConfigureHttpsCertificate(CertificateAnnotationBase cert, IEnumerable<EndpointAnnotation> endpoints)
+    private async Task ConfigureHttpsCertificate(IISExpressProjectResource project, CertificateAnnotationBase cert, IEnumerable<EndpointAnnotation> endpoints)
     {
         var thumbprint = await cert.GetCertificateThumbprintAsync(serviceProvider);
 
@@ -88,15 +88,16 @@ internal class IISEndPointConfigurator
         // TODO: Do a single elevation for all commands instead of one per command.
         foreach (var ep in endpoints.Where(ep => ep.UriScheme == "https"))
         {
-            await ConfigureHttpsCertificate(cert, thumbprint, ep);
+            await ConfigureHttpsCertificate(project, cert, thumbprint, ep);
         }
     }
 
-    private async Task ConfigureHttpsCertificate(CertificateAnnotationBase cert, string thumbprint, EndpointAnnotation ep)
+    private async Task ConfigureHttpsCertificate(IISExpressProjectResource project, CertificateAnnotationBase cert, string thumbprint, EndpointAnnotation ep)
     {
         var port = ep.TargetPort ?? ep.AllocatedEndpoint!.Port;
         var url = new UriBuilder(ep.AllocatedEndpoint!.UriString).ToString();
 
+        
         var (_, sslcertjson) = await commandExecutor.GetCommandOutputAsync("netsh.exe", $"http show sslcert ipport=0.0.0.0:{port} json=enable", false);
         var sslcert = JsonSerializer.Deserialize<NetshSslCert>(sslcertjson);
 
@@ -111,20 +112,24 @@ internal class IISEndPointConfigurator
         }
         else
         {
-            if (sslcert?.SslCertificateBindings.Length > 0)
-            {
-                logger.LogWarning("Certificate {Thumbprint} already bound to port {Port} with different settings", thumbprint, port);
-                await commandExecutor.ExecuteAdminCommandAsync("netsh.exe", "http", "delete", "sslcert", $"ipport=0.0.0.0:{port}");
-            }
-            logger.LogInformation("Binding certificate {Thumbprint} to port {Port}", thumbprint, port);
-            await commandExecutor.ExecuteAdminCommandAsync("netsh.exe", "http", "add", "sslcert", $"ipport=0.0.0.0:{port}",
-                $"\"appid={netshappid:B}\"", $"certhash={thumbprint}", $"certstorename={cert.StoreName}");
+            //if (sslcert?.SslCertificateBindings.Length > 0)
+            //{
+            //    logger.LogWarning("Certificate {Thumbprint} already bound to port {Port} with different settings", thumbprint, port);
+            //    await commandExecutor.ExecuteAdminCommandAsync("netsh.exe", "http", "delete", "sslcert", $"ipport=0.0.0.0:{port}");
+            //}
+            //logger.LogInformation("Binding certificate {Thumbprint} to port {Port}", thumbprint, port);
+            //await commandExecutor.ExecuteAdminCommandAsync("netsh.exe", "http", "add", "sslcert", $"ipport=0.0.0.0:{port}",
+            //    $"\"appid={netshappid:B}\"", $"certhash={thumbprint}", $"certstorename={cert.StoreName}");
 
-            // Since we can't check if the urlacl is already set, we just delete and re-add it.
-            logger.LogInformation("Removing ACL for {url}", url);
-            await commandExecutor.ExecuteAdminCommandAsync("netsh.exe", "http", "delete", "urlacl", $"url={url}");
-            logger.LogInformation("Setting ACL for {url} to everyone", url);
-            await commandExecutor.ExecuteAdminCommandAsync("netsh.exe", "http", "add", "urlacl", $"url={url}", "user=everyone");
+            var iisPath = System.IO.Path.GetDirectoryName(project.Command);
+            var iisAdmin = System.IO.Path.Combine(iisPath!, "IisExpressAdminCmd.exe");
+            await commandExecutor.ExecuteAdminCommandAsync(iisAdmin, "setupSslUrl", $"-url:{url}", $"-CertHash:{thumbprint}");
+
+            //// Since we can't check if the urlacl is already set, we just delete and re-add it.
+            //logger.LogInformation("Removing ACL for {url}", url);
+            //await commandExecutor.ExecuteAdminCommandAsync("netsh.exe", "http", "delete", "urlacl", $"url={url}");
+            //logger.LogInformation("Setting ACL for {url} to everyone", url);
+            //await commandExecutor.ExecuteAdminCommandAsync("netsh.exe", "http", "add", "urlacl", $"url={url}", "user=everyone");
         }
     }
 
