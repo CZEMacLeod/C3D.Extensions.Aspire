@@ -10,7 +10,7 @@ public class VisualStudioInstances : IDisposable
 {
     private readonly IServiceProvider serviceProvider;
     private readonly ILogger<VisualStudioInstances> logger;
-    private ConcurrentDictionary<int, WeakReference<VisualStudioInstance>?> visualStudioInstances = new();
+    private readonly ConcurrentDictionary<int, WeakReference<VisualStudioInstance>?> visualStudioInstances = new();
     private bool disposedValue;
 
     private void RefreshVisualStudioInstances()
@@ -79,11 +79,11 @@ public class VisualStudioInstances : IDisposable
         this.logger = logger;
     }
 
-    public VisualStudioInstance? GetAttachedVisualStudio(Process applicationProcess)
+    public async Task<VisualStudioInstance?> GetAttachedVisualStudioAsync(Process applicationProcess)
     {
         foreach (var vs in GetVisualStudioInstances())
         {
-            foreach (var debug in vs.GetDebuggedProcesses())
+            foreach (var debug in await vs.GetDebuggedProcessesAsync())
             {
                 if (debug.transport == WellKnown.Transports.Default && 
                     debug.id == applicationProcess.Id)
