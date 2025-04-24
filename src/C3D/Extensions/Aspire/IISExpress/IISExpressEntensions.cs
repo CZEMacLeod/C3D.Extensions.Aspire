@@ -3,7 +3,6 @@ using C3D.Extensions.Aspire.IISExpress;
 using C3D.Extensions.Aspire.IISExpress.Annotations;
 using C3D.Extensions.Aspire.IISExpress.Resources;
 using C3D.Extensions.Aspire.VisualStudioDebug;
-using Humanizer.Localisation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -30,14 +29,18 @@ public static class IISExpressEntensions
         if (options is not null)
             o.Configure(options);
 
-        //builder.Services.AddTransient<IISEndPointConfigurator>();
-        //builder.Eventing.Subscribe<BeforeStartEvent>(async (@event, cancellationToken) =>
-        //{
-        //    var services = @event.Services;
-        //    var configurator = services.GetRequiredService<IISEndPointConfigurator>();
+        builder.Services.AddSingleton<CommandExecutor>();
 
-        //    await configurator.ConfigureAsync();
-        //});
+        //builder.Services.AddTransient<IISEndPointConfigurator>();
+        builder.Eventing.Subscribe<BeforeStartEvent>(async (@event, cancellationToken) =>
+        {
+            var services = @event.Services;
+            foreach (var resource in @event.Model.Resources.OfType<IISExpressProjectResource>())
+            {
+                var configurator = services.GetRequiredKeyedService<IISEndPointConfigurator>(resource);
+                await configurator.ConfigureBeforeStartAsync();
+            }
+        });
 
         builder.Eventing.Subscribe<AfterEndpointsAllocatedEvent>(async (@event, cancellationToken) =>
         {
@@ -131,15 +134,20 @@ public static class IISExpressEntensions
     public static IResourceBuilder<IISExpressProjectResource> WithAppPool(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
         string appPoolName) => resourceBuilder.WithAnnotation(new AppPoolArgumentAnnotation(appPoolName), ResourceAnnotationMutationBehavior.Replace);
 
-    public static IResourceBuilder<IISExpressProjectResource> WithCertificate(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
-        string certificateHash, string storeName = "My", string storeLocation = "CurrentUser") => resourceBuilder.WithAnnotation(
-            new CertificateAnnotation(certificateHash, storeName, storeLocation), ResourceAnnotationMutationBehavior.Replace);
+    public static IResourceBuilder<IISExpressProjectResource> WithCertificateHash(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
+        string certificateHash, string storeName = "My") => resourceBuilder.WithAnnotation(
+            new CertificateHashAnnotation(certificateHash, storeName), ResourceAnnotationMutationBehavior.Replace);
 
-    public static IResourceBuilder<IISExpressProjectResource> WithDeveloperCertificate(this IResourceBuilder<IISExpressProjectResource> resourceBuilder)
+    public static IResourceBuilder<IISExpressProjectResource> WithCertificateFile(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
+        string certificatePemFile, string certificateKeyFile, string storeName = "My", string? friendlyName = null) => resourceBuilder.WithAnnotation(
+        new CertificateFileAnnotation(certificatePemFile, certificateKeyFile, storeName) { FriendlyName = friendlyName }, ResourceAnnotationMutationBehavior.Replace);
+
+    public static IResourceBuilder<IISExpressProjectResource> WithDeveloperCertificate(this IResourceBuilder<IISExpressProjectResource> resourceBuilder, 
+        string? friendlyName = "DeveloperCertificate")
     {
         if (resourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode && resourceBuilder.ApplicationBuilder.Environment.IsDevelopment())
         {
-            resourceBuilder.WithAnnotation(new DevCertificateAnnotation(resourceBuilder.ApplicationBuilder.Configuration), ResourceAnnotationMutationBehavior.Replace);
+            resourceBuilder.WithAnnotation(new DevCertificateAnnotation() { FriendlyName = friendlyName }, ResourceAnnotationMutationBehavior.Replace);
         }
         return resourceBuilder;
     }

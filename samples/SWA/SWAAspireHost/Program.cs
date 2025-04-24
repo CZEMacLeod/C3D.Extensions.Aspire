@@ -9,8 +9,9 @@ var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOpt
 });
 
 var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework", IISExpressBitness.IISExpress64Bit)
+    .WithDeveloperCertificate()
     .WithSystemWebAdapters()
-    //.WithHttpHealthCheck("/debug", 204)
+    .WithHttpHealthCheck("/debug", 204)
     .WithUrlForEndpoint("http", u =>
     {
         u.DisplayText = "Framework (http)";
@@ -58,7 +59,7 @@ builder.AddProject<Projects.SWACore>("core")
     .WithUrlForEndpoint("http", u =>
     {
         u.DisplayText = "Core (http)";
-u.DisplayOrder = 12;
+        u.DisplayOrder = 12;
     })
     .WithUrlForEndpoint("https", u =>
     {
