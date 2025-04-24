@@ -3,12 +3,10 @@ using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Eventing;
 using C3D.Extensions.Aspire.VisualStudioDebug.Annotations;
 using C3D.Extensions.VisualStudioDebug;
-using k8s.KubeConfigModels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
-using System.Threading;
 
 namespace C3D.Extensions.Aspire.VisualStudioDebug;
 

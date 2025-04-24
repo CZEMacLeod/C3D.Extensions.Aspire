@@ -1,4 +1,3 @@
-using C3D.Extensions.Aspire.IISExpress;
 using Microsoft.Extensions.Hosting;
 
 
@@ -8,7 +7,9 @@ var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOpt
     AllowUnsecuredTransport = true
 });
 
-var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework", IISExpressBitness.IISExpress64Bit)
+var iis = builder.AddIISExpress("iis");
+
+var framework = iis.AddSiteProject<Projects.SWAFramework>("framework")
     .WithSystemWebAdapters()
     .WithHttpHealthCheck("/debug", 204)
     .WithUrlForEndpoint("http", u =>

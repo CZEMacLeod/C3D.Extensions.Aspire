@@ -4,9 +4,10 @@ using C3D.Extensions.Aspire.IISExpress.Annotations;
 using C3D.Extensions.Aspire.IISExpress.Configuration;
 using C3D.Extensions.Aspire.IISExpress.Resources;
 using C3D.Extensions.Aspire.VisualStudioDebug;
-using EnvDTE;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Aspire.Hosting;
@@ -14,132 +15,170 @@ namespace Aspire.Hosting;
 
 public static class IISExpressEntensions
 {
-    public static IResourceBuilder<IISExpressResource> AddIISExpress(this IDistributedApplicationBuilder builder, string name, IISExpressBitness? bitness)
+    public static IResourceBuilder<IISExpressResource> AddIISExpress(this IDistributedApplicationBuilder builder, string name, IISExpressBitness? bitness = default)
     {
         var (actualBitness, path) = GetIISPath(bitness);
-        var iis = builder.AddResource(new IISExpressResource(name, path, actualBitness));
+        var resource = new IISExpressResource(name, path, actualBitness);
+        var iis = builder.AddResource(resource)
+            .WithAnnotation(new AppPoolArgumentAnnotation(AppPoolArgumentAnnotation.DefaultAppPool));
 
         builder.Services.AddAttachDebuggerHook();
 
+        builder.Eventing.Subscribe<BeforeStartEvent>((@event, token) =>
+        {
+            var notifications = @event.Services.GetRequiredService<ResourceNotificationService>();
+
+            return notifications.PublishUpdateAsync(resource, s => s with { State = KnownResourceStates.Starting });
+        });
+
         builder.Eventing.Subscribe<AfterEndpointsAllocatedEvent>((@event, token) =>
         {
-            AppPoolArgumentAnnotation? appPoolAnnotation;
-            if (!iis.Resource.TryGetLastAnnotation(out appPoolAnnotation))
+            if (!iis.Resource.TryGetLastAnnotation<AppPoolArgumentAnnotation>(out var appPoolAnnotation))
             {
-                appPoolAnnotation = new AppPoolArgumentAnnotation(AppPoolArgumentAnnotation.DefaultAppPool);
-                iis.Resource.Annotations.Add(appPoolAnnotation);
+                throw new InvalidOperationException("IIS Express must have an AppPool defined");
             }
 
-            var appHost = new ApplicationHostConfiguration
+            var appHostConfig = iis.Resource.GetDefaultConfiguration();
+
+            var logger = @event.Services.GetRequiredService<ResourceLoggerService>().GetLogger(iis.Resource);
+
+            appHostConfig.SystemApplicationHost.Sites = new()
             {
-                SystemApplicationHost = new()
-                {
-                    Sites = new()
-                    {
-                        Site = [.. CreateSite(iis.Resource.Projects, appPoolAnnotation.AppPool)]
-                    }
-                }
+                Site = [.. CreateSite(iis.Resource.Sites, appPoolAnnotation.AppPool, logger)]
             };
 
-            return Task.CompletedTask;
+            var path = iis.Resource.SaveConfiguration(appHostConfig);
 
-            static IEnumerable<Site> CreateSite(IEnumerable<IISExpressSiteResource> sites, string appPool)
-            {
-                var id = 0;
+            logger.LogInformation("Saved configuration to '{Path}'", path);
 
-                foreach (var site in sites)
-                {
-                    id++;
+            var notifications = @event.Services.GetRequiredService<ResourceNotificationService>();
 
-                    var tempSite = new Site()
-                    {
-                        Name = site.Name,
-                        Id = id.ToString(),
-                        Application = new()
-                        {
-                            Path = "/",
-                            ApplicationPool = appPool,
-                            VirtualDirectory = new()
-                            {
-                                Path = "/",
-                                PhysicalPath = site.WorkingDirectory
-                            }
-                        },
-                        Bindings = new()
-                        {
-                            Binding = [.. CreateBindings(site)]
-                        }
-                    };
-
-                    if (site.TryGetAnnotationsOfType<SiteConfigurationAnnotation>(out var siteConfigurators))
-                    {
-                        foreach (var configurator in siteConfigurators)
-                        {
-                            configurator.Configure(tempSite);
-                        }
-                    }
-
-                    yield return tempSite;
-                }
-            }
-
-            static IEnumerable<Binding> CreateBindings(IResource project)
-            {
-                var hasEndpoints = false;
-
-                if (project.TryGetEndpoints(out var endpoints))
-                {
-                    foreach (var endpoint in endpoints)
-                    {
-                        if (endpoint.IsProxied)
-                        {
-                            throw new InvalidOperationException("Endpoints for IIS Express must not be proxied");
-                        }
-
-                        hasEndpoints = true;
-
-                        yield return new Binding()
-                        {
-                            // Use the endpoints from the project
-                            Protocol = endpoint.UriScheme,
-                            BindingInformation = $"*:{endpoint.TargetPort ?? endpoint.AllocatedEndpoint?.Port}:localhost"
-                        };
-                    }
-                }
-
-                if (!hasEndpoints)
-                {
-                    yield return new Binding
-                    {
-                        Protocol = "http",
-                        BindingInformation = $"*:{Random.Shared.Next(5000, 10000)}:localhost"
-                    };
-
-                    yield return new Binding
-                    {
-                        Protocol = "https",
-                        BindingInformation = $"*:{Random.Shared.Next(44300, 44398)}:localhost"
-                    };
-                }
-            }
+            return notifications.PublishUpdateAsync(resource, s => s with { State = KnownResourceStates.Running });
         });
 
         return iis;
+
+        static IEnumerable<Site> CreateSite(IEnumerable<IISExpressSiteResource> sites, string appPool, ILogger logger)
+        {
+            var id = 0;
+
+            foreach (var site in sites)
+            {
+                id++;
+
+                var tempSite = new Site()
+                {
+                    Name = site.Name,
+                    Id = id.ToString(),
+                    Application = new()
+                    {
+                        Path = "/",
+                        ApplicationPool = appPool,
+                        VirtualDirectory = new()
+                        {
+                            Path = "/",
+                            PhysicalPath = site.WorkingDirectory
+                        }
+                    },
+                    Bindings = new()
+                    {
+                        Binding = [.. CreateBindings(site)]
+                    }
+                };
+
+                if (site.TryGetAnnotationsOfType<SiteConfigurationAnnotation>(out var siteConfigurators))
+                {
+                    foreach (var configurator in siteConfigurators)
+                    {
+                        configurator.Configure(tempSite);
+                    }
+                }
+
+                logger.LogInformation("{Site}", JsonSerializer.Serialize(tempSite));
+
+                yield return tempSite;
+            }
+        }
+
+        static IEnumerable<Binding> CreateBindings(IResource project)
+        {
+            foreach (var endpoint in project.Annotations.OfType<EndpointAnnotation>())
+            {
+                if (endpoint.IsProxied)
+                {
+                    throw new InvalidOperationException("Endpoints for IIS Express must not be proxied");
+                }
+
+                yield return new Binding()
+                {
+                    Protocol = endpoint.UriScheme,
+                    BindingInformation = $"*:{endpoint.TargetPort ?? endpoint.AllocatedEndpoint?.Port}:localhost"
+                };
+            }
+        }
     }
 
     public static IResourceBuilder<IISExpressSiteResource> AddSiteProject<T>(this IResourceBuilder<IISExpressResource> builder, string name)
         where T : IProjectMetadata, new()
     {
         var project = new T();
-        var resource = new IISExpressSiteResource(builder.Resource, project.ProjectPath, name);
+        var resource = new IISExpressSiteResource(builder.Resource, name, Path.GetDirectoryName(project.ProjectPath)!);
 
-        return builder.ApplicationBuilder.AddResource(resource);
+        builder.ApplicationBuilder.Eventing.Subscribe<BeforeStartEvent>((@event, token) =>
+        {
+            if (resource.TryGetEndpoints(out var endpoints))
+            {
+                foreach (var endpoint in endpoints)
+                {
+                    endpoint.IsProxied = false;
+                }
+            }
+            else
+            {
+                resource.Annotations.Add(new EndpointAnnotation(System.Net.Sockets.ProtocolType.Tcp, name: "http")
+                {
+                    Port = Random.Shared.Next(5000, 10000),
+                    UriScheme = "http",
+                    IsProxied = false
+                });
+
+                resource.Annotations.Add(new EndpointAnnotation(System.Net.Sockets.ProtocolType.Tcp, name: "https")
+                {
+                    Port = Random.Shared.Next(44300, 44398),
+                    UriScheme = "https",
+                    IsProxied = false
+                });
+            }
+
+            return Task.CompletedTask;
+        });
+
+        builder.Resource.Sites.Add(resource);
+
+        var siteResource = builder.ApplicationBuilder.AddResource(resource)
+            .WithParentRelationship(builder)
+            .WithAnnotation(new ConfigArgumentAnnotation(builder.Resource.GetConfigurationPath()))
+            .WithAnnotation(new SiteArgumentAnnotation(name))
+            .WithArgs(c =>
+            {
+                foreach (var arg in resource.Annotations.OfType<IISExpressArgumentAnnotation>())
+                {
+                    c.Args.Add(arg);
+                }
+            });
+
+        if (builder.ApplicationBuilder.Environment.IsDevelopment())
+        {
+            siteResource.WithDebugger();
+        }
+
+        return siteResource;
     }
 
     public static IResourceBuilder<IISExpressSiteResource> ConfigureSite(this IResourceBuilder<IISExpressSiteResource> builder, Action<Site> configure)
         => builder.WithAnnotation(new SiteConfigurationAnnotation(configure));
 
-    public static IResourceBuilder<IISExpressResource> WithDebugger(this IResourceBuilder<IISExpressResource> resourceBuilder, DebugMode debugMode = DebugMode.VisualStudio)
+    public static IResourceBuilder<IISExpressSiteResource> WithDebugger(this IResourceBuilder<IISExpressSiteResource> resourceBuilder, DebugMode debugMode = DebugMode.VisualStudio)
         => DebugResourceBuilderExtensions.WithDebugger(resourceBuilder, debugMode)
             .WithDebugEngine(C3D.Extensions.VisualStudioDebug.WellKnown.Engines.Net4)
             .WithDebuggerHealthcheck();
@@ -178,20 +217,14 @@ public static class IISExpressEntensions
         return builder;
     }
 
-    private static readonly Dictionary<IISExpressBitness, string> iisExpressPath = new();
-
     private static (IISExpressBitness, string) GetIISPath(IISExpressBitness? bitness)
     {
         var bitnessToUse = bitness ?? (Environment.Is64BitOperatingSystem ? IISExpressBitness.IISExpress64Bit : IISExpressBitness.IISExpress32Bit);
 
-        if (!iisExpressPath.TryGetValue(bitness.Value, out var iisExpress))
-        {
-            var programFiles = System.Environment.GetFolderPath(bitnessToUse == IISExpressBitness.IISExpress32Bit ?
-                Environment.SpecialFolder.ProgramFilesX86 :
-                Environment.SpecialFolder.ProgramFiles);
-            iisExpress = System.IO.Path.Combine(programFiles, "IIS Express", "iisexpress.exe");
-            iisExpressPath[bitness.Value] = iisExpress;
-        }
+        var programFiles = Environment.GetFolderPath(bitnessToUse == IISExpressBitness.IISExpress32Bit ?
+            Environment.SpecialFolder.ProgramFilesX86 :
+            Environment.SpecialFolder.ProgramFiles);
+        var iisExpress = Path.Combine(programFiles, "IIS Express", "iisexpress.exe");
 
         return (bitnessToUse, iisExpress);
     }
@@ -244,12 +277,13 @@ public static class IISExpressEntensions
     public static IResourceBuilder<IISExpressProjectResource> WithAppPool(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
         string appPoolName) => resourceBuilder.WithAnnotation(new AppPoolArgumentAnnotation(appPoolName), ResourceAnnotationMutationBehavior.Replace);
 
-    public static IResourceBuilder<IISExpressProjectResource> WithSystemWebAdapters(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
+    public static IResourceBuilder<T> WithSystemWebAdapters<T>(this IResourceBuilder<T> resourceBuilder,
         string envNameBase = "RemoteApp",
         string envNameApiKey = "__ApiKey",
         string envNameUrl = "__RemoteAppUrl",
-        Guid? key = null) =>
-        resourceBuilder
+        Guid? key = null)
+        where T : IResourceWithEnvironment
+        => resourceBuilder
             .WithAnnotation(new SystemWebAdaptersAnnotation(key ?? Guid.NewGuid(),
                 envNameBase + envNameApiKey,
                 envNameBase + envNameUrl))
@@ -261,24 +295,27 @@ public static class IISExpressEntensions
                 }
             });
 
-    public static IResourceBuilder<ProjectResource> WithSystemWebAdapters(
+    public static IResourceBuilder<ProjectResource> WithSystemWebAdapters<T>(
         this IResourceBuilder<ProjectResource> resourceBuilder,
-        IResourceBuilder<IISExpressProjectResource> iisExpressResource,
+        IResourceBuilder<T> iisExpressResource,
         string? envNameKey = null,
         string? envNameUrl = null,
-        string endpoint = "http") => resourceBuilder.WithSystemWebAdapters(
+        string endpoint = "http")
+        where T : IResourceWithEndpoints
+        => resourceBuilder.WithSystemWebAdapters(
             iisExpressResource.Resource,
             envNameKey,
             envNameUrl,
             endpoint);
 
-    public static IResourceBuilder<ProjectResource> WithSystemWebAdapters(
+    public static IResourceBuilder<ProjectResource> WithSystemWebAdapters<T>(
         this IResourceBuilder<ProjectResource> resourceBuilder,
-        IISExpressProjectResource iisExpressResource,
+        T iisExpressResource,
         string? envNameKey = null,
         string? envNameUrl = null,
-        string endpoint = "http") =>
-        resourceBuilder
+        string endpoint = "http")
+        where T : IResourceWithEndpoints
+        => resourceBuilder
             .WithRelationship(iisExpressResource, "YARP")
             .WithEnvironment(c =>
             {
