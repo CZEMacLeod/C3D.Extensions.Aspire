@@ -9,7 +9,7 @@ var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOpt
 });
 
 var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework", IISExpressBitness.IISExpress64Bit)
-    .WithDeveloperCertificate()
+    .WithIISExpressDeveloperCertificate()
     .WithSystemWebAdapters()
     .WithHttpHealthCheck("/debug", 204)
     .WithUrlForEndpoint("http", u =>
@@ -54,6 +54,7 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework",
     });
 
 builder.AddProject<Projects.SWACore>("core")
+    .RunWithIISExpressDeveloperCertificate("ASPNETCORE_Kestrel__Certificates__Default__Path", "ASPNETCORE_Kestrel__Certificates__Default__KeyPath")
     .WithSystemWebAdapters(framework)
     .WithHttpsHealthCheck("/alive")
     .WithUrlForEndpoint("http", u =>

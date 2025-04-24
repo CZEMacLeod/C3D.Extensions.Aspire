@@ -151,6 +151,15 @@ public static class IISExpressEntensions
         }
         return resourceBuilder;
     }
+    public static IResourceBuilder<IISExpressProjectResource> WithIISExpressDeveloperCertificate(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
+    string? friendlyName = "IIS Express Development Certificate")
+    {
+        if (resourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode && resourceBuilder.ApplicationBuilder.Environment.IsDevelopment())
+        {
+            resourceBuilder.WithAnnotation(new IISCertificateAnnotation() { FriendlyName = friendlyName }, ResourceAnnotationMutationBehavior.Replace);
+        }
+        return resourceBuilder;
+    }
 
     public static IResourceBuilder<IISExpressProjectResource> WithSystemWebAdapters(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
         string envNameBase = "RemoteApp",
