@@ -157,8 +157,9 @@ public static class IISExpressEntensions
 
         var siteResource = builder.ApplicationBuilder.AddResource(resource)
             .WithParentRelationship(builder)
-            .WithAnnotation(new ConfigArgumentAnnotation(builder.Resource.GetConfigurationPath()))
+            .WithAnnotation(project)
             .WithAnnotation(new SiteArgumentAnnotation(name))
+            .WithAnnotation(new ConfigArgumentAnnotation(builder.Resource.GetConfigurationPath()))
             .WithArgs(c =>
             {
                 foreach (var arg in resource.Annotations.OfType<IISExpressArgumentAnnotation>())
