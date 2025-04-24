@@ -4,7 +4,7 @@ using System.Xml.Serialization;
 
 namespace C3D.Extensions.Aspire.IISExpress;
 
-public static class ApplicationHostConfigurationExtensions
+internal static class ApplicationHostConfigurationExtensions
 {
     public static ApplicationHostConfiguration GetDefaultConfiguration(this IISExpressResource iis)
     {

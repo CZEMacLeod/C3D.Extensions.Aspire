@@ -29,8 +29,8 @@ internal class IISEndPointConfigurator
         {
             if (!project.HasAnnotationOfType<ConfigArgumentAnnotation>())
             {
-                    project.Annotations.Add(new ConfigArgumentAnnotation(appHostConfig));
-                }
+                project.Annotations.Add(new ConfigArgumentAnnotation(appHostConfig));
+            }
 
             if (project.TryGetLastAnnotation<SiteArgumentAnnotation>(out var site) &&
                 project.TryGetLastAnnotation<ConfigArgumentAnnotation>(out var cfg))

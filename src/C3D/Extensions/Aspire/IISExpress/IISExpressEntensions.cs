@@ -176,7 +176,7 @@ public static class IISExpressEntensions
         return siteResource;
     }
 
-    public static IResourceBuilder<IISExpressSiteResource> ConfigureSite(this IResourceBuilder<IISExpressSiteResource> builder, Action<Site> configure)
+    public static IResourceBuilder<IISExpressSiteResource> WithSiteConfiguration(this IResourceBuilder<IISExpressSiteResource> builder, Action<Site> configure)
         => builder.WithAnnotation(new SiteConfigurationAnnotation(configure));
 
     public static IResourceBuilder<IISExpressSiteResource> WithDebugger(this IResourceBuilder<IISExpressSiteResource> resourceBuilder, DebugMode debugMode = DebugMode.VisualStudio)

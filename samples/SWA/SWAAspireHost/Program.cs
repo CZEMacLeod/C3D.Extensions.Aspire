@@ -1,15 +1,15 @@
 using Microsoft.Extensions.Hosting;
 
-
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions()
 {
     Args = args,
     AllowUnsecuredTransport = true
 });
 
-var iis = builder.AddIISExpress("iis");
+//var framework = builder.AddIISExpress("iis")
+//    .AddSiteProject<ProjectResource.SWAFramework>("framework")
 
-var framework = iis.AddSiteProject<Projects.SWAFramework>("framework")
+var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
     .WithSystemWebAdapters()
     .WithHttpHealthCheck("/debug", 204)
     .WithUrlForEndpoint("http", u =>
