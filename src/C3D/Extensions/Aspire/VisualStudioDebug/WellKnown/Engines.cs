@@ -1,14 +1,4 @@
-﻿using EnvDTE;
-using Google.Protobuf.WellKnownTypes;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Runtime.Intrinsics.X86;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace C3D.Extensions.Aspire.VisualStudioDebug.WellKnown;
+﻿namespace C3D.Extensions.Aspire.VisualStudioDebug.WellKnown;
 
 public class Engines
 {
