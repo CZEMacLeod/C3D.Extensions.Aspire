@@ -146,7 +146,7 @@ internal class AttachDebuggerHook : BackgroundService
         if (!context.Resource.HasAnnotationOfType<DebugAttachTransportAnnotation>())
         {
             target = System.Diagnostics.Process.GetProcessById(context.ProcessId);
-            var vs1 = visualStudioInstances.GetAttachedVisualStudio(target);
+            var vs1 = await visualStudioInstances.GetAttachedVisualStudioAsync(target);
             if (vs1 is not null)
             {
                 logger.LogWarning("Debugger {vs}:{vsId} already attached to {target}:{targetId}", vs1.ProcessName, vs1.Id, target.ProcessName, target.Id);
@@ -157,7 +157,7 @@ internal class AttachDebuggerHook : BackgroundService
         }
 
         var aspireHost = Process.GetCurrentProcess();
-        var vs = visualStudioInstances.GetAttachedVisualStudio(aspireHost);
+        var vs = await visualStudioInstances.GetAttachedVisualStudioAsync(aspireHost);
         if (vs is null)
         {
             logger.LogError("Could not get debugger for aspire host {host}", aspireHost);
@@ -178,19 +178,19 @@ internal class AttachDebuggerHook : BackgroundService
 
         if (context.Resource.TryGetLastAnnotation<DebugAttachTransportAnnotation>(out var ta))
         {
-            ShowEngines(vs, ta.Transport);
-            ShowProcesses(vs, ta.Transport, ta.Qualifier);
+            await ShowEnginesAsync(vs, ta.Transport);
+            await ShowProcessesAsync(vs, ta.Transport, ta.Qualifier);
             logger.LogInformation("Attaching {vs}:{vsId} to {transport} {id} for {applicationName}", 
-                vs.ProcessName, vs.Id, vs.GetDebugTransportName(ta.Transport), ta.Qualifier, context.Resource.Name);
-            vs.AttachVisualStudioToProcess(ta.Transport, ta.Qualifier, engines);
+                vs.ProcessName, vs.Id, await vs.GetDebugTransportNameAsync(ta.Transport), ta.Qualifier, context.Resource.Name);
+            await vs.AttachVisualStudioToProcessAsync(ta.Transport, ta.Qualifier, engines);
         }
         else
         {
             logger.LogInformation("Attaching {vs}:{vsId} to {target}:{targetId} for {applicationName}", vs.ProcessName, vs.Id, target!.ProcessName, target.Id, context.Resource.Name);
-            ShowTransports(vs);
-            ShowEngines(vs, "default");
-            ShowProcesses(vs, "default", null);
-            vs.AttachVisualStudioToProcess(context.ProcessId, engines);
+            await ShowTransportsAsync(vs);
+            await ShowEnginesAsync(vs, "default");
+            await ShowProcessesAsync(vs, "default", null);
+            await vs.AttachVisualStudioToProcessAsync(context.ProcessId, engines);
         }
 
         logger.LogInformation("Debugger {vs}:{vsId} attached to target", vs.ProcessName, vs.Id);
@@ -199,11 +199,11 @@ internal class AttachDebuggerHook : BackgroundService
         await distributedApplicationEventing.PublishAsync(new Events.AfterDebugAttachEvent(context), cancellationToken);
     }
 
-    private void ShowProcesses(VisualStudioInstance vs, string transport, string? qualifier)
+    private async Task ShowProcessesAsync(VisualStudioInstance vs, string transport, string? qualifier)
     {
         if (options.Value.ShowProcesses)
         {
-            var availableProcesses = vs.GetDebugProcesses(transport, qualifier);
+            var availableProcesses = await vs.GetDebugProcessesAsync(transport, qualifier);
             foreach (var process in availableProcesses)
             {
                 logger.LogInformation("Available {transport} process {id} {name} {isDebugged}", transport, process.id, process.name, process.isDebugged);
@@ -211,11 +211,11 @@ internal class AttachDebuggerHook : BackgroundService
         }
     }
 
-    private void ShowTransports(VisualStudioInstance vs)
+    private async Task ShowTransportsAsync(VisualStudioInstance vs)
     {
         if (options.Value.ShowTransports)
         {
-            var availableTransports = vs.GetDebugTransports();
+            var availableTransports = await vs.GetDebugTransportsAsync();
             foreach (var transport in availableTransports)
             {
                 logger.LogInformation("Available transport {id} {name}",  transport.id, transport.name);
@@ -223,11 +223,11 @@ internal class AttachDebuggerHook : BackgroundService
         }
     }
 
-    private void ShowEngines(VisualStudioInstance vs, string transport)
+    private async Task ShowEnginesAsync(VisualStudioInstance vs, string transport)
     {
         if (options.Value.ShowEngines)
         {
-            var availableEngines = vs.GetDebugEngines(transport);
+            var availableEngines = await vs.GetDebugEnginesAsync(transport);
             foreach (var engine in availableEngines)
             {
                 logger.LogInformation("Available {transport} engine {id} {name} {result}", transport, engine.id, engine.name, engine.result);

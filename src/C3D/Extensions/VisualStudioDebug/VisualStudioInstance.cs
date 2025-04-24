@@ -1,7 +1,6 @@
 ﻿using EnvDTE;
 using EnvDTE80;
 using Microsoft.Extensions.Logging;
-using System.Runtime.InteropServices;
 using DTEProcess = EnvDTE90.Process3;
 using Process = System.Diagnostics.Process;
 
@@ -12,6 +11,7 @@ public class VisualStudioInstance : IDisposable
     private readonly Process process;
     private DTE dte;
     private readonly ILogger<VisualStudioInstance> logger;
+    private readonly STASingleThreadedScheduler sta;
     private bool disposedValue;
 
     internal VisualStudioInstance(System.Diagnostics.Process process, DTE vs, ILogger<VisualStudioInstance> logger)
@@ -19,14 +19,24 @@ public class VisualStudioInstance : IDisposable
         this.process = process;
         dte = vs;
         this.logger = logger;
+        this.sta = new STASingleThreadedScheduler(logger);
+        staTaskFactory = new(CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskContinuationOptions.None, sta);
     }
+
+    private readonly TaskFactory staTaskFactory;
 
     public Process Process => process;
     public int Id => process.Id;
     public string ProcessName => process.ProcessName;
 
+    private Task RunOnSTAScheduler(Func<Task> func) => staTaskFactory.StartNew(func).Unwrap();
+    private Task<T> RunOnSTAScheduler<T>(Func<Task<T>> func) => staTaskFactory.StartNew(func).Unwrap();
+    private Task RunOnSTAScheduler(Action func) => staTaskFactory.StartNew(func);
+    private Task<T> RunOnSTAScheduler<T>(Func<T> func) => staTaskFactory.StartNew(func);
 
-    public string? GetSolution()
+    public Task<string?> GetSolutionAsync() => RunOnSTAScheduler(GetSolution);
+
+    private string? GetSolution()
     {
         try
         {
@@ -38,7 +48,8 @@ public class VisualStudioInstance : IDisposable
         return null;
     }
 
-    public IEnumerable<(int id, string transport, string name)> GetDebuggedProcesses()
+    public Task<List<(int id, string transport, string name)>> GetDebuggedProcessesAsync() => RunOnSTAScheduler(() => GetDebuggedProcesses().ToList());
+    private IEnumerable<(int id, string transport, string name)> GetDebuggedProcesses()
     {
         foreach (EnvDTE.Process debuggedProcess in dte.Debugger.DebuggedProcesses)
         {
@@ -53,13 +64,15 @@ public class VisualStudioInstance : IDisposable
         }
     }
 
-    public string GetDebugTransportName(string transport)
+    public Task<string> GetDebugTransportNameAsync(string transport) => RunOnSTAScheduler(() => GetDebugTransportName(transport));
+    private string GetDebugTransportName(string transport)
     {
         var result = dte.GetDebugTransport(transport);
         return result.transport.Name;
     }
 
-    public IEnumerable<(string id, string name)> GetDebugTransports()
+    public Task<List<(string id, string name)>> GetDebugTransportsAsync() => RunOnSTAScheduler(() => GetDebugTransports().ToList());
+    private IEnumerable<(string id, string name)> GetDebugTransports()
     {
         var debugger = dte.GetDebugger();
         foreach (EnvDTE80.Transport e in debugger.Transports)
@@ -68,7 +81,8 @@ public class VisualStudioInstance : IDisposable
         }
     }
 
-    public IEnumerable<(int id, string name, bool isDebugged)> GetDebugProcesses(string transport, string? qualifier)
+    public Task<List<(int id, string name, bool isDebugged)>> GetDebugProcessesAsync(string transport, string? qualifier) => RunOnSTAScheduler(() => GetDebugProcesses(transport, qualifier).ToList());
+    private IEnumerable<(int id, string name, bool isDebugged)> GetDebugProcesses(string transport, string? qualifier)
     {
         (var debugger, var port) = dte.GetDebugTransport(transport);
         if (port is null)
@@ -81,7 +95,8 @@ public class VisualStudioInstance : IDisposable
         }
     }
 
-    public IEnumerable<(string id, string name, int result)> GetDebugEngines(string transport = "default")
+    public Task<List<(string id, string name, int result)>> GetDebugEnginesAsync(string transport) => RunOnSTAScheduler(() => GetDebugEngines(transport).ToList());
+    private IEnumerable<(string id, string name, int result)> GetDebugEngines(string transport = "default")
     {
         (_, var port) = dte.GetDebugTransport(transport);
         if (port is null)
@@ -103,12 +118,12 @@ public class VisualStudioInstance : IDisposable
     /// <exception cref="InvalidOperationException">
     /// Thrown when the application process is null.
     /// </exception>
-    public void AttachVisualStudioToProcess(int processId, params string[] engines)
-        => AttachVisualStudioToProcess(vs => (vs.GetDebugTransport("default").transport,
+    public Task AttachVisualStudioToProcessAsync(int processId, params string[] engines)
+        => RunOnSTAScheduler(() => AttachVisualStudioToProcess(vs => (vs.GetDebugTransport("default").transport,
                         vs.Debugger.LocalProcesses
                         .Cast<DTEProcess>()
                         .FirstOrDefault(process => process.ProcessID == processId)),
-                engines);
+                engines));
 
     /// <summary>
     /// The method to use to attach visual studio to a process by specifying connection information.
@@ -119,8 +134,8 @@ public class VisualStudioInstance : IDisposable
     /// <exception cref="InvalidOperationException">
     /// Thrown when the application process is null.
     /// </exception>
-    public void AttachVisualStudioToProcess(string transport, string? qualifier, params string[] engines)
-        => AttachVisualStudioToProcess(vs =>
+    public Task AttachVisualStudioToProcessAsync(string transport, string? qualifier, params string[] engines)
+        => RunOnSTAScheduler(() => AttachVisualStudioToProcess(vs =>
             {
                 var (debugger, port) = vs.GetDebugTransport(transport);
                 Processes processes = debugger.GetProcesses(port, qualifier ?? string.Empty);
@@ -130,44 +145,40 @@ public class VisualStudioInstance : IDisposable
                 }
                 return (port, (DTEProcess)processes.Item(1));
             },
-            engines);
+            engines));
 
     private void AttachVisualStudioToProcess(Func<DTE, (Transport transport, DTEProcess? process)> applicationProcess, params string[] engines)
-        => STAHelper.Run(() =>
+    {
+        // Find the process you want the VS instance to attach to...
+        var (transport, process) = applicationProcess(dte);
+
+        // Attach to the process.
+        if (process != null)
         {
-            // Register the message filter scoped to this method
-            using var filter = new MessageFilter(logger);
-
-            // Find the process you want the VS instance to attach to...
-            var (transport, process) = applicationProcess(dte);
-
-            // Attach to the process.
-            if (process != null)
+            Engine[] resolvedEngines;
+            try
             {
-                Engine[] resolvedEngines;
-                try
-                {
-                    resolvedEngines = transport.ResolveDebugEngines(engines).ToArray();
-                }
-                catch (Exception e)
-                {
-                    logger.LogError("Failed to resolve engines {engines}", engines);
-                    throw new ArgumentException("Failed to resolve engines", nameof(engines), e);
-                }
-                if (resolvedEngines.Length == 0)
-                {
-                    process.Attach();
-                }
-                else
-                {
-                    process.Attach2(resolvedEngines);
-                }
+                resolvedEngines = transport.ResolveDebugEngines(engines).ToArray();
+            }
+            catch (Exception e)
+            {
+                logger.LogError("Failed to resolve engines {engines}", engines);
+                throw new ArgumentException("Failed to resolve engines", nameof(engines), e);
+            }
+            if (resolvedEngines.Length == 0)
+            {
+                process.Attach();
             }
             else
             {
-                throw new InvalidOperationException("Visual Studio cannot find specified application");
+                process.Attach2(resolvedEngines);
             }
-        });
+        }
+        else
+        {
+            throw new InvalidOperationException("Visual Studio cannot find specified application");
+        }
+    }
 
     protected virtual void Dispose(bool disposing)
     {
@@ -176,6 +187,7 @@ public class VisualStudioInstance : IDisposable
             if (disposing)
             {
                 process.Dispose();
+                sta.Dispose();
             }
 
             dte = null!;
@@ -199,86 +211,4 @@ public class VisualStudioInstance : IDisposable
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
-
-
-    // Based on: https://learn.microsoft.com/en-us/previous-versions/visualstudio/visual-studio-2010/ms228772(v=vs.100)?redirectedfrom=MSDN#example
-    private class MessageFilter : IMessageFilter, IDisposable
-    {
-        //
-        // Class containing the IMessageFilter
-        // thread error-handling functions.
-
-        private readonly IMessageFilter? originalFilter;
-        private readonly ILogger logger;
-
-        public MessageFilter(ILogger logger)
-        {
-            IMessageFilter? newFilter = this;
-            _ = CoRegisterMessageFilter(newFilter, out IMessageFilter? oldFilter);
-            this.originalFilter = oldFilter;
-            this.logger = logger;
-        }
-
-        //
-        // IOleMessageFilter functions.
-        // Handle incoming thread requests.
-        int IMessageFilter.HandleInComingCall(int dwCallType,
-            System.IntPtr hTaskCaller, int dwTickCount, System.IntPtr
-            lpInterfaceInfo)
-        {
-            //Return the flag SERVERCALL_ISHANDLED.
-            return 0;
-        }
-
-        // Thread call was rejected, so try again.
-        int IMessageFilter.RetryRejectedCall(System.IntPtr
-            hTaskCallee, int dwTickCount, int dwRejectType)
-        {
-            logger.LogTrace("RetryRejectedCall {callee} {tickCount} {rejectType}", hTaskCallee, dwTickCount, dwRejectType);
-            if (dwRejectType == 2)
-            // flag = SERVERCALL_RETRYLATER.
-            {
-                // Retry the thread call immediately if return >=0 & 
-                // <100.
-                return 99;
-            }
-            // Too busy; cancel call.
-            return -1;
-        }
-
-        int IMessageFilter.MessagePending(System.IntPtr hTaskCallee,
-            int dwTickCount, int dwPendingType)
-        {
-            logger.LogTrace("MessagePending {callee} {tickCount} {pendingType}", hTaskCallee, dwTickCount, dwPendingType);
-            //Return the flag PENDINGMSG_WAITDEFPROCESS.
-            return 2;
-        }
-
-        // Implement the IOleMessageFilter interface.
-        [DllImport("Ole32.dll")]
-        private static extern int
-            CoRegisterMessageFilter(IMessageFilter? newFilter, out
-            IMessageFilter? oldFilter);
-
-        public void Dispose()
-        {
-            _ = CoRegisterMessageFilter(originalFilter, out IMessageFilter? _);
-        }
-    }
-
-    //// Definition of the IMessageFilter interface which we need to implement and 
-    //// register with the CoRegisterMessageFilter API.    
-    [ComImport()]
-    [Guid("00000016-0000-0000-C000-000000000046")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    private interface IMessageFilter     // Renamed to avoid confusion w/ System.Windows.Forms.IMessageFilter
-    {
-        [PreserveSig]
-        int HandleInComingCall(int dwCallType, IntPtr hTaskCaller, int dwTickCount, IntPtr lpInterfaceInfo);
-        [PreserveSig]
-        int RetryRejectedCall(IntPtr hTaskCallee, int dwTickCount, int dwRejectType);
-        [PreserveSig]
-        int MessagePending(IntPtr hTaskCallee, int dwTickCount, int dwPendingType);
-    };
 }
-
