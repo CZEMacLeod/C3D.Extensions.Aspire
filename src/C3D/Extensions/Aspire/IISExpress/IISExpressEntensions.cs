@@ -3,6 +3,7 @@ using C3D.Extensions.Aspire.IISExpress;
 using C3D.Extensions.Aspire.IISExpress.Annotations;
 using C3D.Extensions.Aspire.IISExpress.Resources;
 using C3D.Extensions.Aspire.VisualStudioDebug;
+using Humanizer.Localisation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -29,16 +30,23 @@ public static class IISExpressEntensions
         if (options is not null)
             o.Configure(options);
 
-        builder.Services.AddTransient<IISEndPointConfigurator>();
-        
-        builder.Eventing.Subscribe<BeforeStartEvent>((@event, cancellationToken) =>
+        //builder.Services.AddTransient<IISEndPointConfigurator>();
+        //builder.Eventing.Subscribe<BeforeStartEvent>(async (@event, cancellationToken) =>
+        //{
+        //    var services = @event.Services;
+        //    var configurator = services.GetRequiredService<IISEndPointConfigurator>();
+
+        //    await configurator.ConfigureAsync();
+        //});
+
+        builder.Eventing.Subscribe<AfterEndpointsAllocatedEvent>(async (@event, cancellationToken) =>
         {
             var services = @event.Services;
-            var configurator = services.GetRequiredService<IISEndPointConfigurator>();
-
-            configurator.Configure();
-
-            return Task.CompletedTask;
+            foreach (var resource in @event.Model.Resources.OfType<IISExpressProjectResource>())
+            {
+                var configurator = services.GetRequiredKeyedService<IISEndPointConfigurator>(resource);
+                await configurator.ConfigureAfterEndpointsAllocatedAsync();
+            }
         });
 
         builder.Services.AddAttachDebuggerHook();
@@ -88,6 +96,24 @@ public static class IISExpressEntensions
             .WithOtlpExporter()
             .ExcludeFromManifest();
 
+        builder.Services.AddKeyedTransient(resource, (sp, r) => ActivatorUtilities.CreateInstance<IISEndPointConfigurator>(sp, r));
+
+        //builder.Eventing.Subscribe<AfterResourceEndpointsAllocatedEvent>(resource, async (@event, cancellationToken) =>
+        //{
+        //    var services = @event.Services;
+        //    var configurator = services.GetRequiredKeyedService<IISEndPointConfigurator>(resource);
+
+        //    await configurator.ConfigureAfterEndpointsAllocatedAsync();
+        //});
+
+        builder.Eventing.Subscribe<BeforeResourceStartedEvent>(resource, async (@event, cancellationToken) =>
+        {
+            var services = @event.Services;
+            var configurator = services.GetRequiredKeyedService<IISEndPointConfigurator>(resource);
+
+            await configurator.ConfigureBeforeResourceStartedAsync();
+        });
+
         if (builder.Environment.IsDevelopment())
         {
             resourceBuilder.WithDebugger();
@@ -105,6 +131,19 @@ public static class IISExpressEntensions
     public static IResourceBuilder<IISExpressProjectResource> WithAppPool(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
         string appPoolName) => resourceBuilder.WithAnnotation(new AppPoolArgumentAnnotation(appPoolName), ResourceAnnotationMutationBehavior.Replace);
 
+    public static IResourceBuilder<IISExpressProjectResource> WithCertificate(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
+        string certificateHash, string storeName = "My", string storeLocation = "CurrentUser") => resourceBuilder.WithAnnotation(
+            new CertificateAnnotation(certificateHash, storeName, storeLocation), ResourceAnnotationMutationBehavior.Replace);
+
+    public static IResourceBuilder<IISExpressProjectResource> WithDeveloperCertificate(this IResourceBuilder<IISExpressProjectResource> resourceBuilder)
+    {
+        if (resourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode && resourceBuilder.ApplicationBuilder.Environment.IsDevelopment())
+        {
+            resourceBuilder.WithAnnotation(new DevCertificateAnnotation(resourceBuilder.ApplicationBuilder.Configuration), ResourceAnnotationMutationBehavior.Replace);
+        }
+        return resourceBuilder;
+    }
+
     public static IResourceBuilder<IISExpressProjectResource> WithSystemWebAdapters(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
         string envNameBase = "RemoteApp",
         string envNameApiKey = "__ApiKey",
@@ -114,7 +153,7 @@ public static class IISExpressEntensions
             .WithAnnotation(new SystemWebAdaptersAnnotation(key ?? Guid.NewGuid(),
                 envNameBase + envNameApiKey,
                 envNameBase + envNameUrl))
-            .WithEnvironment(c=>
+            .WithEnvironment(c =>
             {
                 if (resourceBuilder.Resource.TryGetLastAnnotation<SystemWebAdaptersAnnotation>(out var swa))
                 {

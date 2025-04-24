@@ -10,7 +10,7 @@ var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOpt
 
 var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework", IISExpressBitness.IISExpress64Bit)
     .WithSystemWebAdapters()
-    .WithHttpHealthCheck("/debug", 204)
+    //.WithHttpHealthCheck("/debug", 204)
     .WithUrlForEndpoint("http", u =>
     {
         u.DisplayText = "Framework (http)";
