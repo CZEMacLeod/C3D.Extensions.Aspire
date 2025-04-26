@@ -16,8 +16,8 @@ public static class SystemWebAdaptersExtensions
         [ResourceName] string resourceName,
         string? envNameApiKey = "RemoteApp__ApiKey",
         string? envNameUrl = "RemoteApp__RemoteAppUrl",
-        Guid? key = null) => builder.AddSystemWebAdapters(resourceName, 
-            builder.AddParameter($"{resourceName}-key", new GuidParameterDefault(key), persist: true), 
+        Guid? key = null) => builder.AddSystemWebAdapters(resourceName,
+            builder.AddParameter($"{resourceName}-key", new GuidParameterDefault(key), persist: true),
             envNameApiKey, envNameUrl);
 
     public static IResourceBuilder<SystemWebAdaptersResource> AddSystemWebAdapters(this IDistributedApplicationBuilder builder,
@@ -95,6 +95,12 @@ public static class SystemWebAdaptersExtensions
             .WithRelationship(resourceBuilder.Resource, "SWA")
             .WithAnnotation(new SystemWebAdaptersAnnotation(envNameKey, null))
             .WithSystemWebAdaptersEnvironment();
+
+        if (resourceBuilder.Resource.Core is not null)
+        {
+            var coreBuilder = resourceBuilder.ApplicationBuilder.CreateResourceBuilder(resourceBuilder.Resource.Core);
+            coreBuilder.WithRelationship(iisExpressProjectResource.Resource, "SWA-Framework");
+        }
         return resourceBuilder;
     }
 
@@ -119,6 +125,12 @@ public static class SystemWebAdaptersExtensions
             .WithRelationship(resourceBuilder.Resource, "SWA")
             .WithAnnotation(new SystemWebAdaptersAnnotation(envNameKey, envNameUrl))
             .WithSystemWebAdaptersEnvironment();
+
+        if (resourceBuilder.Resource.Framework is not null)
+        {
+            coreProjectResource
+                .WithRelationship(resourceBuilder.Resource.Framework, "SWA-Framework");
+        }
         return resourceBuilder;
     }
 

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections;
 using System.Net.NetworkInformation;
 using System.Text.Json;
+using YamlDotNet.Core;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Aspire.Hosting;
@@ -24,9 +25,12 @@ public static class IISExpressEntensions
         if (!resource.TryGetEndpoints(out var endpoints) || !endpoints.Any())
         {
             logger.LogWarning("No endpoints found for resource {ResourceName}", resource.Name);
+            return;
         }
 
-        foreach (var ep in endpoints!.Where(ep => ep.UriScheme == "https"))
+        var httpsEndpoints = endpoints!.Where(ep => ep.UriScheme == "https").ToList();
+
+        foreach (var ep in httpsEndpoints)
         {
             bitness ??= (resource.TryGetLastAnnotation<IISExpressBitnessAnnotation>(out var bitnessAnnotations)
                 ? bitnessAnnotations.Bitness : (resource as IISExpressSiteResource)?.IISExpress.Bitness)
@@ -36,6 +40,74 @@ public static class IISExpressEntensions
             logger.LogInformation("If your https endpoint does not work, run the following command from an elevated command prompt:\r\n" +
                 "\"{Path}\\iisExpressAdminCmd.exe\" setupSslUrl -url:{Url} -UseSelfSigned",
                 bitness.GetIISExpressPath().dirPath, new UriBuilder(ep.UriScheme, ep.TargetHost, port!).ToString());
+        }
+
+        if (httpsEndpoints.Count != 0)
+        {
+            resource.Annotations.Add(new ResourceCommandAnnotation("fix-https",
+                "Fix https", update =>
+                {
+                    return ResourceCommandState.Enabled;
+                },
+                async execute =>
+                {
+                    var cmd = execute.ServiceProvider.GetRequiredService<CommandExecutor>();
+                    var logger = execute.ServiceProvider.GetRequiredService<ResourceLoggerService>().GetLogger(execute.ResourceName);
+
+                    var command = System.IO.Path.Combine(bitness.GetIISExpressPath().dirPath, "iisExpressAdminCmd.exe");
+                    if (httpsEndpoints.Count == 1)
+                    {
+                        var ep = httpsEndpoints[0];
+                        var port = ep.EnsureValidIISEndpointPort();
+                        var exitCode = await cmd.ExecuteAdminCommandAsync(command, logger, "setupSslUrl", 
+                            $"-url:{ep.UriScheme}://localhost:{port}",
+                            "-UseSelfSigned"
+                            );
+                        if (exitCode != 0)
+                        {
+                            return new ExecuteCommandResult() { Success = false, ErrorMessage = $"ExitCode: {exitCode}" };
+                        }
+                    }
+                    else
+                    {
+
+                        var batName = Path.ChangeExtension(Path.GetTempFileName(), ".bat");
+                        try
+                        {
+                            using (var bat = File.CreateText(batName))
+                            {
+                                bat.WriteLine("@echo off");
+                                foreach (var ep in httpsEndpoints)
+                                {
+                                    var port = ep.EnsureValidIISEndpointPort();
+                                    var queuedCommand = $"\"{command}\" setupSslUrl -url:{ep.UriScheme}://localhost:{port} -UseSelfSigned";
+                                    logger.LogInformation("Queueing command: {Command}", queuedCommand);    
+                                    await bat.WriteLineAsync(queuedCommand);
+                                }
+                            }
+                            var exitCode = await cmd.ExecuteAdminCommandAsync(batName, logger);
+                            if (exitCode!=0)
+                            {
+                                return new ExecuteCommandResult() { Success = false, ErrorMessage = $"ExitCode: {exitCode}" };
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            return new ExecuteCommandResult() { Success = false, ErrorMessage = ex.Message };
+                        }
+                        finally
+                        {
+                            try { File.Delete(batName); } catch { }
+                        }
+                    }
+                    return new ExecuteCommandResult() { Success = true };
+                },
+                "If your https endpoints do not work, this should resolve things (Runs as Admin)",
+                httpsEndpoints,
+                "This requires admin privileges to run. You may get a UAC prompt.",
+                "Wrench",
+                IconVariant.Regular,
+                false));
         }
     }
 
@@ -254,6 +326,8 @@ public static class IISExpressEntensions
         var iis = builder.AddResource(resource)
             .WithAnnotation(new AppPoolArgumentAnnotation(AppPoolArgumentAnnotation.DefaultAppPool));
 
+        builder.Services.AddSingleton<CommandExecutor>();
+
         builder.Services.AddAttachDebuggerHook();
 
         builder.Eventing.Subscribe<BeforeStartEvent>((@event, token) =>
@@ -438,6 +512,8 @@ public static class IISExpressEntensions
 
         builder.Services.AddTransient<IISEndPointConfigurator>();
 
+        builder.Services.AddSingleton<CommandExecutor>();
+
         builder.Eventing.Subscribe<BeforeStartEvent>((@event, cancellationToken) =>
         {
             var services = @event.Services;
@@ -528,22 +604,4 @@ public static class IISExpressEntensions
         CLRConfigFile = "%IIS_USER_HOME%\\config\\aspnet.config",
         AutoStart = "true"
     };
-  
-    public static IResourceBuilder<T> WithSystemWebAdapters<T>(this IResourceBuilder<T> resourceBuilder,
-        string envNameBase = "RemoteApp",
-        string envNameApiKey = "__ApiKey",
-        string envNameUrl = "__RemoteAppUrl",
-        Guid? key = null)
-        where T : IResourceWithEnvironment
-        => resourceBuilder
-            .WithAnnotation(new SystemWebAdaptersAnnotation(key ?? Guid.NewGuid(),
-                envNameBase + envNameApiKey,
-                envNameBase + envNameUrl))
-            .WithEnvironment(c =>
-            {
-                if (resourceBuilder.Resource.TryGetLastAnnotation<SystemWebAdaptersAnnotation>(out var swa))
-                {
-                    c.EnvironmentVariables[swa.EnvNameKey] = swa.Key.ToString();
-                }
-            });
 }
