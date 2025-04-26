@@ -286,6 +286,69 @@ public static class IISExpressEntensions
         return siteResource;
     }
 
+    /// <summary>
+    /// Sets up the default endpoints for IIS Express. This will add http and https endpoints to the resource.
+    /// </summary>
+    /// <remarks>
+    /// When a valid IIS Express config file is found and used, the ports from the file will be used if they are left null.
+    /// If the config file does not exist, or the ports are not set in the config file, then a port in the range 5000-10000 will be used for http and 44300-44399 for https.
+    /// If you specify a port, it will be used in addition to any ground in config file.
+    /// If you don't want to use the config file, you can use the <see cref="WithTemporaryConfig(IResourceBuilder{IISExpressProjectResource})"/> method to create a temporary config file.
+    /// </remarks>
+    /// <param name="httpPort">Explicit http port. If null then the config file port, or a port in the range 5000-10000 will be used</param>
+    /// <param name="httpsPort">Explicit https port. If null then the config file port, or a port in the range 44300-44399 will be used</param>
+    /// <param name="isProxied">Set to true if the endpoint should be proxied or false if the endpoint should not be proxied. Defaults to no change which will normally be true.</param>
+    public static IResourceBuilder<T> WithDefaultIISExpressEndpoints<T>(this IResourceBuilder<T> resourceBuilder,
+        int? httpPort = null, int? httpsPort = null, bool? isProxied = null)
+        where T : IResourceWithEndpoints
+    {
+        resourceBuilder.WithEndpoint("http", ep =>
+        {
+            ep.UriScheme = "http";
+            if (isProxied.HasValue) ep.IsProxied = isProxied.Value;
+            ep.TargetPort ??= httpPort;
+        });
+        resourceBuilder.WithEndpoint("https", ep =>
+        {
+            ep.UriScheme = "https";
+            if (isProxied.HasValue) ep.IsProxied = isProxied.Value;
+            ep.TargetPort ??= httpsPort;
+        });
+
+        return resourceBuilder;
+    }
+
+    public static T WithDefaultIISExpressEndpoints<T>(this T resource, int? httpPort = null, int? httpsPort = null, bool isProxied = true)
+        where T : IResourceWithEndpoints
+    {
+        bool addHttp = true;
+        bool addHttps = true;
+        if (resource.TryGetEndpoints(out var endpoints))
+        {
+            addHttp = !endpoints.Any(e => e.Name == "http");
+            addHttps = !endpoints.Any(e => e.Name == "https");
+        }
+        if (addHttp)
+        {
+            resource.Annotations.Add(new EndpointAnnotation(System.Net.Sockets.ProtocolType.Tcp, name: "http")
+            {
+                IsProxied = isProxied,
+                TargetPort = httpPort,
+                UriScheme = "http"
+            });
+        }
+        if (addHttps)
+        {
+            resource.Annotations.Add(new EndpointAnnotation(System.Net.Sockets.ProtocolType.Tcp, name: "https")
+            {
+                IsProxied = isProxied,
+                TargetPort = httpsPort,
+                UriScheme = "https"
+            });
+        }
+        return resource;
+    }
+
     public static IResourceBuilder<IISExpressSiteResource> WithSiteConfiguration(this IResourceBuilder<IISExpressSiteResource> builder, Action<Site> configure)
         => builder.WithAnnotation(new SiteConfigurationAnnotation(configure));
 
