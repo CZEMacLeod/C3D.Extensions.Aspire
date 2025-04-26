@@ -17,7 +17,26 @@ namespace Aspire.Hosting;
 
 public static class IISExpressEntensions
 {
+    private static void ShowIISExpressHttpsEndpointInformation<T>(this T resource, ILogger logger, IISExpressBitness? bitness = null)
+        where T : IResourceWithEndpoints
+    {
+        if (!resource.TryGetEndpoints(out var endpoints) || !endpoints.Any())
+        {
+            logger.LogWarning("No endpoints found for resource {ResourceName}", resource.Name);
+        }
 
+        foreach (var ep in endpoints!.Where(ep => ep.UriScheme == "https"))
+        {
+            bitness ??= (resource.TryGetLastAnnotation<IISExpressBitnessAnnotation>(out var bitnessAnnotations)
+                ? bitnessAnnotations.Bitness : (resource as IISExpressSiteResource)?.IISExpress.Bitness)
+                ?? IISExpressBitnessAnnotation.DefaultBitness;
+
+            var port = ep.EnsureValidIISEndpointPort();
+            logger.LogInformation("If your https endpoint does not work, run the following command from an elevated command prompt:\r\n" +
+                "\"{Path}\\iisExpressAdminCmd.exe\" setupSslUrl -url:{Url} -UseSelfSigned",
+                bitness.GetIISExpressPath().dirPath, new UriBuilder(ep.UriScheme, ep.TargetHost, port!).ToString());
+        }
+    }
     #region PortAllocator
 
     // TODO: Move this to a separate class and make it a singleton and/or accessible from DI
@@ -88,6 +107,24 @@ public static class IISExpressEntensions
         return port;
     }
     #endregion
+
+    internal static IResourceBuilder<T> ShowIISExpressHttpsEndpointInformation<T>(IResourceBuilder<T> resourceBuilder, ILogger? logger = null, IISExpressBitness? bitness = null)
+        where T : IResourceWithEndpoints
+    {
+        var resource = resourceBuilder.Resource;
+        resource.ShowIISExpressHttpsEndpointInformation(resourceBuilder.ApplicationBuilder.Eventing, logger, bitness);
+        return resourceBuilder;
+    }
+
+    internal static void ShowIISExpressHttpsEndpointInformation<T>(this T resource, IDistributedApplicationEventing eventing, ILogger? logger = null, IISExpressBitness? bitness = null) where T : IResourceWithEndpoints
+    {
+        eventing.Subscribe<AfterEndpointsAllocatedEvent>((e, c) =>
+        {
+            logger ??= e.Services.GetRequiredService<ResourceLoggerService>().GetLogger(resource);
+            ShowIISExpressHttpsEndpointInformation(resource, logger, bitness);
+            return Task.CompletedTask;
+        });
+    }
     public static IResourceBuilder<IISExpressResource> AddIISExpress(this IDistributedApplicationBuilder builder, string name, IISExpressBitness? bitness = default)
     {
         var (actualBitness, path) = bitness.GetIISExpressExe();
