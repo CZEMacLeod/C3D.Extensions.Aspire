@@ -17,7 +17,7 @@ public static class IISExpressEntensions
 {
     public static IResourceBuilder<IISExpressResource> AddIISExpress(this IDistributedApplicationBuilder builder, string name, IISExpressBitness? bitness = default)
     {
-        var (actualBitness, path) = GetIISPath(bitness);
+        var (actualBitness, path) = bitness.GetIISExpressExe();
         var resource = new IISExpressResource(name, path, actualBitness);
         var iis = builder.AddResource(resource)
             .WithAnnotation(new AppPoolArgumentAnnotation(AppPoolArgumentAnnotation.DefaultAppPool));
@@ -218,18 +218,6 @@ public static class IISExpressEntensions
         return builder;
     }
 
-    private static (IISExpressBitness, string) GetIISPath(IISExpressBitness? bitness)
-    {
-        var bitnessToUse = bitness ?? (Environment.Is64BitOperatingSystem ? IISExpressBitness.IISExpress64Bit : IISExpressBitness.IISExpress32Bit);
-
-        var programFiles = Environment.GetFolderPath(bitnessToUse == IISExpressBitness.IISExpress32Bit ?
-            Environment.SpecialFolder.ProgramFilesX86 :
-            Environment.SpecialFolder.ProgramFiles);
-        var iisExpress = Path.Combine(programFiles, "IIS Express", "iisexpress.exe");
-
-        return (bitnessToUse, iisExpress);
-    }
-
     public static IResourceBuilder<IISExpressProjectResource> AddIISExpressProject<T>(this IDistributedApplicationBuilder builder,
         [ResourceName] string? resourceName = null,
         IISExpressBitness? bitness = null)
@@ -242,10 +230,10 @@ public static class IISExpressEntensions
         var appName = app.GetType().Name;
         var projectPath = System.IO.Path.GetDirectoryName(app.ProjectPath)!;
 
-        (bitness, var iisExpress) = GetIISPath(bitness);
+        (var actualBitness, var iisExpress) = bitness.GetIISExpressExe();
 
         resourceName ??= appName;
-        var resource = new IISExpressProjectResource(resourceName, iisExpress, projectPath);
+        var resource = new IISExpressProjectResource(resourceName, iisExpress, projectPath, actualBitness);
 
         var resourceBuilder = builder.AddResource(resource)
             .WithAnnotation(app)
