@@ -625,6 +625,16 @@ public static class IISExpressEntensions
         return resourceBuilder.WithAnnotation(new ConfigArgumentAnnotation(configLocation), ResourceAnnotationMutationBehavior.Replace);
     }
 
+    public static IResourceBuilder<IISExpressProjectResource> WithApplicationHostXdt(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
+        string xdtLocation, int order = 0)
+    {
+        if (!System.IO.Path.IsPathFullyQualified(xdtLocation))
+        {
+            xdtLocation = System.IO.Path.Combine(resourceBuilder.ApplicationBuilder.AppHostDirectory, xdtLocation);
+        }
+        return resourceBuilder.WithAnnotation(new ApplicationHostXdtAnnotation(xdtLocation, order), ResourceAnnotationMutationBehavior.Append);
+    }
+
     public static IResourceBuilder<IISExpressProjectResource> WithSiteName(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
         string siteName) => resourceBuilder.WithAnnotation(new SiteArgumentAnnotation(siteName), ResourceAnnotationMutationBehavior.Replace);
 

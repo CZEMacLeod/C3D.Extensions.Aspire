@@ -46,6 +46,8 @@ internal class IISEndPointConfigurator
 
     private void AddBindings(IISExpressProjectResource project, SiteArgumentAnnotation site, ConfigArgumentAnnotation cfg)
     { 
+        var xdts = project.Annotations.OfType<ApplicationHostXdtAnnotation>().ToList();
+
         var appConfig = cfg.LoadConfiguration();
         var existingConfig = appConfig is not null;
         if (appConfig is null)
@@ -60,13 +62,13 @@ internal class IISEndPointConfigurator
         {
             if (existingConfig)
             {
-                cfg = project.WithTemporaryConfiguration(appConfig);
+                cfg = project.WithTemporaryConfiguration(appConfig, logger, xdts);
                 logger.LogDebug("Using temp configuration {AppHostConfig}", cfg.ApplicationHostConfig);
                 existingConfig = false;
             }
             else
             {
-                cfg.SaveConfiguration(appConfig);
+                cfg.SaveConfiguration(appConfig, logger, xdts);
             }
         }
 

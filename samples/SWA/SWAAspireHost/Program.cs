@@ -1,3 +1,4 @@
+using C3D.Extensions.Aspire.IISExpress.Annotations;
 using Microsoft.Extensions.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions()
@@ -23,6 +24,11 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
     //.WithHttpsEndpoint(name: "custom-https", targetPort: 40376)   // This will be added to the config file and saved in a temporary location
 
     //.WithSystemWebAdapters()            // Use this __or__ the AddSystemWebAdapters method below
+
+    .WithTemporaryConfig()
+    .WithApplicationHostXdt("connectionTimeout.xdt")
+    .WithApplicationHostXdt("rewrite.xdt")
+
     .WithUrlForEndpoint("http", u =>
     {
         u.DisplayText = "Framework (http)";
