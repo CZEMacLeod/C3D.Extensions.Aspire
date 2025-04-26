@@ -491,8 +491,28 @@ public static class IISExpressEntensions
         return resourceBuilder;
     }
 
+    /// <summary>
+    /// Creates a temporary config file for IIS Express. This will be created in the temp directory.
+    /// </summary>
+    public static IResourceBuilder<IISExpressProjectResource> WithTemporaryConfig(this IResourceBuilder<IISExpressProjectResource> resourceBuilder) =>
+        resourceBuilder.WithConfigLocation(ApplicationHostConfigurationExtensions.GetTempConfigFile());
+
+    /// <summary>
+    /// Sets the config location for the IIS Express project.
+    /// </summary>
+    /// <remarks>
+    /// The file will be created if it does not already exist.
+    /// If the path is not fully qualified, it will be combined with the application host directory.
+    /// </remarks>
     public static IResourceBuilder<IISExpressProjectResource> WithConfigLocation(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
-        string configLocation) => resourceBuilder.WithAnnotation(new ConfigArgumentAnnotation(configLocation), ResourceAnnotationMutationBehavior.Replace);
+        string configLocation)
+    {
+        if (!System.IO.Path.IsPathFullyQualified(configLocation))
+        {
+            configLocation = System.IO.Path.Combine(resourceBuilder.ApplicationBuilder.AppHostDirectory, configLocation);
+        }
+        return resourceBuilder.WithAnnotation(new ConfigArgumentAnnotation(configLocation), ResourceAnnotationMutationBehavior.Replace);
+    }
 
     public static IResourceBuilder<IISExpressProjectResource> WithSiteName(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
         string siteName) => resourceBuilder.WithAnnotation(new SiteArgumentAnnotation(siteName), ResourceAnnotationMutationBehavior.Replace);
