@@ -51,56 +51,7 @@ public static class IISExpressEntensions
                 },
                 async execute =>
                 {
-                    var cmd = execute.ServiceProvider.GetRequiredService<CommandExecutor>();
-                    var logger = execute.ServiceProvider.GetRequiredService<ResourceLoggerService>().GetLogger(execute.ResourceName);
-
-                    var command = System.IO.Path.Combine(bitness.GetIISExpressPath().dirPath, "iisExpressAdminCmd.exe");
-                    if (httpsEndpoints.Count == 1)
-                    {
-                        var ep = httpsEndpoints[0];
-                        var port = ep.EnsureValidIISEndpointPort();
-                        var exitCode = await cmd.ExecuteAdminCommandAsync(command, logger, "setupSslUrl", 
-                            $"-url:{ep.UriScheme}://localhost:{port}",
-                            "-UseSelfSigned"
-                            );
-                        if (exitCode != 0)
-                        {
-                            return new ExecuteCommandResult() { Success = false, ErrorMessage = $"ExitCode: {exitCode}" };
-                        }
-                    }
-                    else
-                    {
-
-                        var batName = Path.ChangeExtension(Path.GetTempFileName(), ".bat");
-                        try
-                        {
-                            using (var bat = File.CreateText(batName))
-                            {
-                                bat.WriteLine("@echo off");
-                                foreach (var ep in httpsEndpoints)
-                                {
-                                    var port = ep.EnsureValidIISEndpointPort();
-                                    var queuedCommand = $"\"{command}\" setupSslUrl -url:{ep.UriScheme}://localhost:{port} -UseSelfSigned";
-                                    logger.LogInformation("Queueing command: {Command}", queuedCommand);    
-                                    await bat.WriteLineAsync(queuedCommand);
-                                }
-                            }
-                            var exitCode = await cmd.ExecuteAdminCommandAsync(batName, logger);
-                            if (exitCode!=0)
-                            {
-                                return new ExecuteCommandResult() { Success = false, ErrorMessage = $"ExitCode: {exitCode}" };
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            return new ExecuteCommandResult() { Success = false, ErrorMessage = ex.Message };
-                        }
-                        finally
-                        {
-                            try { File.Delete(batName); } catch { }
-                        }
-                    }
-                    return new ExecuteCommandResult() { Success = true };
+                    return await ExecuteFixHttpsCommand(execute, bitness, httpsEndpoints);
                 },
                 "If your https endpoints do not work, this should resolve things (Runs as Admin)",
                 httpsEndpoints,
@@ -109,6 +60,85 @@ public static class IISExpressEntensions
                 IconVariant.Regular,
                 false));
         }
+    }
+
+    public static async Task ExecuteFixHttpsCommand<T>(this T resource, IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
+        where T : IResourceWithEndpoints
+    {
+        if (!resource.TryGetEndpoints(out var endpoints) || !endpoints.Any())
+        {
+            throw new InvalidOperationException("No endpoints found for resource");
+        }
+        var httpsEndpoints = endpoints!.Where(ep => ep.UriScheme == "https").ToList();
+        if (httpsEndpoints.Count == 0)
+        {
+            throw new InvalidOperationException("No https endpoints found for resource");
+        }
+
+        var bitness = (resource.TryGetLastAnnotation<IISExpressBitnessAnnotation>(out var bitnessAnnotations)
+            ? bitnessAnnotations.Bitness : (resource as IISExpressSiteResource)?.IISExpress.Bitness)
+            ?? IISExpressBitnessAnnotation.DefaultBitness;
+        var context = new ExecuteCommandContext()
+        {
+            CancellationToken = cancellationToken,
+            ResourceName = resource.Name,
+            ServiceProvider = serviceProvider,
+        };
+        await ExecuteFixHttpsCommand(context, bitness, httpsEndpoints);
+    }
+
+    private static async Task<ExecuteCommandResult> ExecuteFixHttpsCommand(ExecuteCommandContext execute, IISExpressBitness? bitness, List<EndpointAnnotation> httpsEndpoints)
+    {
+        var cmd = execute.ServiceProvider.GetRequiredService<CommandExecutor>();
+        var logger = execute.ServiceProvider.GetRequiredService<ResourceLoggerService>().GetLogger(execute.ResourceName);
+
+        var command = System.IO.Path.Combine(bitness.GetIISExpressPath().dirPath, "iisExpressAdminCmd.exe");
+        if (httpsEndpoints.Count == 1)
+        {
+            var ep = httpsEndpoints[0];
+            var port = ep.EnsureValidIISEndpointPort();
+            var exitCode = await cmd.ExecuteAdminCommandAsync(command, logger, "setupSslUrl",
+                $"-url:{ep.UriScheme}://localhost:{port}",
+                "-UseSelfSigned"
+                );
+            if (exitCode != 0)
+            {
+                return new ExecuteCommandResult() { Success = false, ErrorMessage = $"ExitCode: {exitCode}" };
+            }
+        }
+        else
+        {
+
+            var batName = Path.ChangeExtension(Path.GetTempFileName(), ".bat");
+            try
+            {
+                using (var bat = File.CreateText(batName))
+                {
+                    bat.WriteLine("@echo off");
+                    foreach (var ep in httpsEndpoints)
+                    {
+                        var port = ep.EnsureValidIISEndpointPort();
+                        var queuedCommand = $"\"{command}\" setupSslUrl -url:{ep.UriScheme}://localhost:{port} -UseSelfSigned";
+                        logger.LogInformation("Queueing command: {Command}", queuedCommand);
+                        await bat.WriteLineAsync(queuedCommand);
+                    }
+                }
+                var exitCode = await cmd.ExecuteAdminCommandAsync(batName, logger);
+                if (exitCode != 0)
+                {
+                    return new ExecuteCommandResult() { Success = false, ErrorMessage = $"ExitCode: {exitCode}" };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ExecuteCommandResult() { Success = false, ErrorMessage = ex.Message };
+            }
+            finally
+            {
+                try { File.Delete(batName); } catch { }
+            }
+        }
+        return new ExecuteCommandResult() { Success = true };
     }
 
     internal static T EnsureValidIISEndpoints<T>(this T resource)
@@ -125,12 +155,12 @@ public static class IISExpressEntensions
 
     // TODO: Move this to a separate class and make it a singleton and/or accessible from DI
     // This should really be part of a 'built in' port allocator service and used by the aspire host etc.
-    private static readonly int[] avoidPorts = new[] {
+    private static readonly int[] avoidPorts = [
         5060, 5061,
         6000,
         6566,
         6665, 6666, 6667, 6668, 6669,
-        6697, 10080 };
+        6697, 10080 ];
 
     private static BitArray? allocatedPorts;
     private static BitArray AllocatedPorts
@@ -505,6 +535,11 @@ public static class IISExpressEntensions
         options ??= _ => { };
         var o = builder.Services
             .AddOptions<IISExpressOptions>()
+            .Configure(o =>
+            {
+                o.AssemblyName = builder.AppHostAssembly?.FullName;
+                o.Assembly = builder.AppHostAssembly;
+            })
             .ValidateDataAnnotations()
             .ValidateOnStart();
         if (options is not null)

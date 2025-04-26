@@ -6,7 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{E1FFCD98-26C8-4A07-92A9-4B3F18850527}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		.vs\C3D.Extensions.Aspire.IISExpress\config\applicationhost.config = .vs\C3D.Extensions.Aspire\config\applicationhost.config
+		.vs\C3D.Extensions.Aspire.IISExpress\config\applicationhost.config = .vs\C3D.Extensions.Aspire.IISExpress\config\applicationhost.config
 		build\azure-pipelines.yml = build\azure-pipelines.yml
 		build\ConvertTo-MarkdownTable.ps1 = build\ConvertTo-MarkdownTable.ps1
 		build\DetectPackages.ps1 = build\DetectPackages.ps1
@@ -89,6 +89,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaitForConsole.WebApp", "samples\WaitForOutput\WebApplication\WaitForConsole.WebApp.csproj", "{111E1366-2322-3E44-36B2-60EDFB12A478}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "SWAShared", "samples\SWA\SWAShared\SWAShared.shproj", "{AC506891-D58A-4506-B26C-B48D8420871E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{8AFDAAF4-2682-43BB-B576-24B96DFDEF49}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SWATestProject", "tests\SWATestProject\SWATestProject.csproj", "{EEB4277E-3222-49D4-8A37-7A761DC01E43}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -176,6 +180,10 @@ Global
 		{111E1366-2322-3E44-36B2-60EDFB12A478}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{111E1366-2322-3E44-36B2-60EDFB12A478}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{111E1366-2322-3E44-36B2-60EDFB12A478}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EEB4277E-3222-49D4-8A37-7A761DC01E43}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EEB4277E-3222-49D4-8A37-7A761DC01E43}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EEB4277E-3222-49D4-8A37-7A761DC01E43}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EEB4277E-3222-49D4-8A37-7A761DC01E43}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -208,6 +216,7 @@ Global
 		{69B8531B-EDA8-5DB5-6D55-3DF3F8D1310F} = {3CE52242-69A6-4569-96CB-483D7116522D}
 		{111E1366-2322-3E44-36B2-60EDFB12A478} = {3CE52242-69A6-4569-96CB-483D7116522D}
 		{AC506891-D58A-4506-B26C-B48D8420871E} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{EEB4277E-3222-49D4-8A37-7A761DC01E43} = {8AFDAAF4-2682-43BB-B576-24B96DFDEF49}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7A2C1EF4-C8A0-49A5-8198-0BFBDFE2EE42}

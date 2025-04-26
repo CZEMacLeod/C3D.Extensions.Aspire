@@ -12,6 +12,7 @@ var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOpt
 var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
     //.WithConfigLocation("test.config")  // use a custom config file - will be created if it doesn't exist
 
+    
     //.WithTemporaryConfig()              // Use a temporary config file each time
 
     // Note that the config file ports will be used as the default target ports for the endpoints.
@@ -22,8 +23,6 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
     //.WithHttpsEndpoint(name: "custom-https", targetPort: 40376)   // This will be added to the config file and saved in a temporary location
 
     //.WithSystemWebAdapters()            // Use this __or__ the AddSystemWebAdapters method below
-    
-    .WithHttpHealthCheck("/debug", 204)
     .WithUrlForEndpoint("http", u =>
     {
         u.DisplayText = "Framework (http)";
@@ -64,6 +63,22 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
             }
         }
     });
+
+if (builder.ExecutionContext.IsRunMode)
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        framework.WithHttpHealthCheck("/debug", 204);
+    }
+
+    if (builder.Environment.IsEnvironment("Test"))
+    {
+        framework.WithTemporaryConfig();    // Ensure we use a temp config with random port numbers
+        framework.WithDefaultIISExpressEndpoints();
+    }
+}
+
+
 
 var core = builder.AddProject<Projects.SWACore>("core")
     //.WithSystemWebAdapters(framework)   // Use this __or__ the AddSystemWebAdapters method below

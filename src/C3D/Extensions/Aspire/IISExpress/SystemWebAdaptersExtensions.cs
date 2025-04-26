@@ -79,7 +79,7 @@ public static class SystemWebAdaptersExtensions
         string endpoint = "http")
         where T : IResourceWithEndpoints, IResourceWithEnvironment
     {
-        if (iisExpressProjectResource.TryGetSystemWebAdapters(out var swar))
+        if (iisExpressProjectResource.TryGetSystemWebAdapters(out var _))
         {
             throw new InvalidOperationException($"The resource {iisExpressProjectResource.Resource.Name} already has an associated SystemWebAdapters resource.");
         }
@@ -109,7 +109,7 @@ public static class SystemWebAdaptersExtensions
         string? envNameKey = null,
         string? envNameUrl = null)
     {
-        if (coreProjectResource.TryGetSystemWebAdapters(out var swar))
+        if (coreProjectResource.TryGetSystemWebAdapters(out var _))
         {
             throw new InvalidOperationException($"The resource {coreProjectResource.Resource.Name} already has an associated SystemWebAdapters resource.");
         }
@@ -201,13 +201,12 @@ public static class SystemWebAdaptersExtensions
 
             swar.KeyParameter.Default = new GuidParameterDefault(key);
             swar.Framework = resourceBuilder.Resource;
-            var swarBuilder = resourceBuilder.ApplicationBuilder.CreateResourceBuilder(swar);
-            swarBuilder
+            resourceBuilder.ApplicationBuilder.CreateResourceBuilder(swar)
                 .WithAnnotation(new SystemWebAdaptersAnnotation(envNameKey, envNameUrl));
         }
         else
         {
-            var swarBuilder = resourceBuilder.ApplicationBuilder
+            resourceBuilder.ApplicationBuilder
                 .AddSystemWebAdapters(resourceBuilder.Resource.Name + "-swa",
                     envNameKey,
                     envNameUrl,
@@ -264,7 +263,7 @@ public static class SystemWebAdaptersExtensions
         }
         else
         {
-            var swarBuilder = resourceBuilder.ApplicationBuilder
+            resourceBuilder.ApplicationBuilder
                 .AddSystemWebAdapters(resourceBuilder.Resource.Name + "-swa",
                     envNameKey ?? "RemoteApp__ApiKey",
                     envNameUrl ?? "RemoteApp__RemoteAppUrl",
