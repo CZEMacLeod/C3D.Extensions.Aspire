@@ -138,6 +138,72 @@ public static class IISExpressEntensions
 
         return port!.Value;
     }
+
+    internal static Site CreateIISConfigSite(this IISExpressSiteResource site, int id, string appPool, ILogger logger)
+    {
+        var tempSite = CreateIISConfigSite(site, id, site.Name, site.WorkingDirectory, appPool, logger);
+        ShowIISExpressHttpsEndpointInformation(site, logger);
+        return tempSite;
+    }
+
+    internal static Site CreateIISConfigSite(this IResourceWithEndpoints site, int id, string name, string path, string appPool, ILogger logger)
+    {
+        var tempSite = new Site()
+        {
+            Name = name,
+            Id = id.ToString(),
+            Application = new()
+            {
+                Path = "/",
+                ApplicationPool = appPool,
+                VirtualDirectory = new()
+                {
+                    Path = "/",
+                    PhysicalPath = path
+                }
+            },
+            Bindings = new()
+            {
+                Binding = [.. site.CreateIISConfigBindings()]
+            }
+        };
+
+        if (site.TryGetAnnotationsOfType<SiteConfigurationAnnotation>(out var siteConfigurators))
+        {
+            foreach (var configurator in siteConfigurators)
+            {
+                configurator.Configure(tempSite);
+            }
+        }
+
+        logger.LogDebug("{Site}", JsonSerializer.Serialize(tempSite));
+        return tempSite;
+    }
+
+    internal static IEnumerable<Binding> CreateIISConfigBindings(this IResourceWithEndpoints project)
+    {
+        foreach (var endpoint in project.Annotations.OfType<EndpointAnnotation>())
+        {
+            yield return CreateIISConfigBinding(endpoint);
+        }
+    }
+
+    internal static Binding CreateIISConfigBinding(this EndpointAnnotation endpoint)
+    {
+        //if (endpoint.IsProxied)
+        //{
+        //    throw new InvalidOperationException("Endpoints for IIS Express must not be proxied");
+        //}
+
+        int? port = EnsureValidIISEndpointPort(endpoint);
+
+        return new Binding()
+        {
+            Protocol = endpoint.UriScheme,
+            BindingInformation = $"*:{port}:localhost"
+        };
+    }
+
     internal static IResourceBuilder<T> ShowIISExpressHttpsEndpointInformation<T>(IResourceBuilder<T> resourceBuilder, ILogger? logger = null, IISExpressBitness? bitness = null)
         where T : IResourceWithEndpoints
     {
@@ -155,6 +221,32 @@ public static class IISExpressEntensions
             return Task.CompletedTask;
         });
     }
+
+    internal static EndpointAnnotation AddOrUpdateEndpointFromBinding(this IResourceWithEndpoints resource, Binding binding)
+    {
+        var endpoint = resource.Annotations
+                            .OfType<EndpointAnnotation>()
+                            .Where(ea => StringComparer.OrdinalIgnoreCase.Equals(ea.Name, binding.Protocol))
+                            .SingleOrDefault();
+        if (endpoint is null)
+        {
+            endpoint = new EndpointAnnotation(System.Net.Sockets.ProtocolType.Tcp, name: binding.Protocol);
+            resource.Annotations.Add(endpoint);
+        }
+        else if (endpoint.TargetPort is not null && endpoint.TargetPort != binding.Port)
+        {
+            endpoint = new EndpointAnnotation(System.Net.Sockets.ProtocolType.Tcp, name: $"{binding.Protocol}-{binding.Port}");
+            resource.Annotations.Add(endpoint);
+        }
+        MarkPortAsUsed(binding.Port);
+
+        endpoint.TargetPort = binding.Port;
+        endpoint.UriScheme = binding.Protocol;
+        //endpoint.IsProxied = false;
+
+        return endpoint;
+    }
+
     public static IResourceBuilder<IISExpressResource> AddIISExpress(this IDistributedApplicationBuilder builder, string name, IISExpressBitness? bitness = default)
     {
         var (actualBitness, path) = bitness.GetIISExpressExe();
@@ -184,7 +276,7 @@ public static class IISExpressEntensions
 
             appHostConfig.SystemApplicationHost.Sites = new()
             {
-                Site = [.. CreateSite(iis.Resource.Sites, appPoolAnnotation.AppPool, logger)]
+                Site = [.. CreateSites(iis.Resource.Sites, appPoolAnnotation.AppPool, logger)]
             };
 
             var path = iis.Resource.SaveConfiguration(appHostConfig);
@@ -198,62 +290,14 @@ public static class IISExpressEntensions
 
         return iis;
 
-        static IEnumerable<Site> CreateSite(IEnumerable<IISExpressSiteResource> sites, string appPool, ILogger logger)
+        static IEnumerable<Site> CreateSites(IEnumerable<IISExpressSiteResource> sites, string appPool, ILogger logger)
         {
             var id = 0;
 
             foreach (var site in sites)
             {
                 id++;
-
-                var tempSite = new Site()
-                {
-                    Name = site.Name,
-                    Id = id.ToString(),
-                    Application = new()
-                    {
-                        Path = "/",
-                        ApplicationPool = appPool,
-                        VirtualDirectory = new()
-                        {
-                            Path = "/",
-                            PhysicalPath = site.WorkingDirectory
-                        }
-                    },
-                    Bindings = new()
-                    {
-                        Binding = [.. CreateBindings(site)]
-                    }
-                };
-
-                if (site.TryGetAnnotationsOfType<SiteConfigurationAnnotation>(out var siteConfigurators))
-                {
-                    foreach (var configurator in siteConfigurators)
-                    {
-                        configurator.Configure(tempSite);
-                    }
-                }
-
-                logger.LogInformation("{Site}", JsonSerializer.Serialize(tempSite));
-
-                yield return tempSite;
-            }
-        }
-
-        static IEnumerable<Binding> CreateBindings(IResource project)
-        {
-            foreach (var endpoint in project.Annotations.OfType<EndpointAnnotation>())
-            {
-                if (endpoint.IsProxied)
-                {
-                    throw new InvalidOperationException("Endpoints for IIS Express must not be proxied");
-                }
-
-                yield return new Binding()
-                {
-                    Protocol = endpoint.UriScheme,
-                    BindingInformation = $"*:{endpoint.TargetPort ?? endpoint.AllocatedEndpoint?.Port}:localhost"
-                };
+                yield return site.CreateIISConfigSite(id, appPool, logger);
             }
         }
     }
@@ -266,28 +310,16 @@ public static class IISExpressEntensions
 
         builder.ApplicationBuilder.Eventing.Subscribe<BeforeStartEvent>((@event, token) =>
         {
-            if (resource.TryGetEndpoints(out var endpoints))
+            if (!resource.TryGetEndpoints(out var endpoints))
             {
-                foreach (var endpoint in endpoints)
-                {
-                    endpoint.IsProxied = false;
-                }
+                resource.WithDefaultIISExpressEndpoints();
             }
-            else
-            {
-                resource.Annotations.Add(new EndpointAnnotation(System.Net.Sockets.ProtocolType.Tcp, name: "http")
-                {
-                    Port = Random.Shared.Next(5000, 10000),
-                    UriScheme = "http",
-                    IsProxied = false
-                });
+            resource.EnsureValidIISEndpoints();
 
-                resource.Annotations.Add(new EndpointAnnotation(System.Net.Sockets.ProtocolType.Tcp, name: "https")
-                {
-                    Port = Random.Shared.Next(44300, 44398),
-                    UriScheme = "https",
-                    IsProxied = false
-                });
+            // Inherit the default apppool if not explicitly set
+            if (!resource.HasAnnotationOfType<AppPoolArgumentAnnotation>() && resource.IISExpress.TryGetLastAnnotation<AppPoolArgumentAnnotation>(out var appPool))
+            {
+                resource.Annotations.Add(new AppPoolArgumentAnnotation(appPool.AppPool));
             }
 
             return Task.CompletedTask;
@@ -440,7 +472,6 @@ public static class IISExpressEntensions
 
         var resourceBuilder = builder.AddResource(resource)
             .WithAnnotation(app)
-            //.WithAnnotation(new AppPoolArgumentAnnotation())
             .WithAnnotation(new SiteArgumentAnnotation(appName))
             .WithArgs(c =>
                 {
@@ -469,6 +500,15 @@ public static class IISExpressEntensions
     public static IResourceBuilder<IISExpressProjectResource> WithAppPool(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
         string appPoolName) => resourceBuilder.WithAnnotation(new AppPoolArgumentAnnotation(appPoolName), ResourceAnnotationMutationBehavior.Replace);
 
+    internal static Add CreateIISConfigApplicationPool(this AppPoolArgumentAnnotation appPool) => new()
+    {
+        Name = appPool.AppPool,
+        ManagedRuntimeVersion = "v4.0",
+        ManagedPipelineMode = "Integrated",
+        CLRConfigFile = "%IIS_USER_HOME%\\config\\aspnet.config",
+        AutoStart = "true"
+    };
+  
     public static IResourceBuilder<T> WithSystemWebAdapters<T>(this IResourceBuilder<T> resourceBuilder,
         string envNameBase = "RemoteApp",
         string envNameApiKey = "__ApiKey",
