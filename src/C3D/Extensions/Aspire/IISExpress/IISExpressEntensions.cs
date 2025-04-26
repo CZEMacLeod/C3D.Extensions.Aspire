@@ -1,4 +1,5 @@
 ﻿using Aspire.Hosting.ApplicationModel;
+using Aspire.Hosting.Eventing;
 using C3D.Extensions.Aspire.IISExpress;
 using C3D.Extensions.Aspire.IISExpress.Annotations;
 using C3D.Extensions.Aspire.IISExpress.Configuration;
@@ -37,6 +38,17 @@ public static class IISExpressEntensions
                 bitness.GetIISExpressPath().dirPath, new UriBuilder(ep.UriScheme, ep.TargetHost, port!).ToString());
         }
     }
+
+    internal static T EnsureValidIISEndpoints<T>(this T resource)
+        where T : IResourceWithEndpoints
+    {
+        foreach (var ep in resource.Annotations.OfType<EndpointAnnotation>())
+        {
+            ep.EnsureValidIISEndpointPort();
+        }
+        return resource;
+    }
+
     #region PortAllocator
 
     // TODO: Move this to a separate class and make it a singleton and/or accessible from DI
@@ -108,6 +120,24 @@ public static class IISExpressEntensions
     }
     #endregion
 
+    private static int EnsureValidIISEndpointPort(this EndpointAnnotation endpoint)
+    {
+        var port = endpoint.TargetPort ?? endpoint.AllocatedEndpoint?.Port;
+        if (port is null)
+        {
+            port = endpoint.UriScheme switch
+            {
+                "http" => GetRandomFreePort(5000, 10000),  // There are certain ports that browsers will object to that should be avoided.
+                                                           // See https://github.com/CZEMacLeod/C3D.Extensions.Playwright.AspNetCore/blob/6d3b92790df905cd44587c983c2b89546a856ee3/src/C3D/Extensions/Playwright/AspNetCore/Factory/PlaywrightWebApplicationFactory.cs#L29
+                                                           // Search for --explicitly-allowed-ports or network.security.ports.banned.override
+                "https" => GetRandomFreePort(44300, 44400),
+                _ => throw new InvalidOperationException($"Unsupported uri scheme: {endpoint.UriScheme}")
+            };
+            endpoint.TargetPort = port;
+        }
+
+        return port!.Value;
+    }
     internal static IResourceBuilder<T> ShowIISExpressHttpsEndpointInformation<T>(IResourceBuilder<T> resourceBuilder, ILogger? logger = null, IISExpressBitness? bitness = null)
         where T : IResourceWithEndpoints
     {
