@@ -7,6 +7,8 @@ using C3D.Extensions.Aspire.VisualStudioDebug;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Collections;
+using System.Net.NetworkInformation;
 using System.Text.Json;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
@@ -15,6 +17,77 @@ namespace Aspire.Hosting;
 
 public static class IISExpressEntensions
 {
+
+    #region PortAllocator
+
+    // TODO: Move this to a separate class and make it a singleton and/or accessible from DI
+    // This should really be part of a 'built in' port allocator service and used by the aspire host etc.
+    private static readonly int[] avoidPorts = new[] {
+        5060, 5061,
+        6000,
+        6566,
+        6665, 6666, 6667, 6668, 6669,
+        6697, 10080 };
+
+    private static BitArray? allocatedPorts;
+    private static BitArray AllocatedPorts
+    {
+        get
+        {
+            if (allocatedPorts is null)
+            {
+                allocatedPorts = new BitArray(65536);
+                foreach (var avoidPort in avoidPorts)
+                {
+                    allocatedPorts[avoidPort] = true;
+                }
+
+                try
+                {
+                    IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+                    TcpConnectionInformation[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpConnections();
+
+                    foreach (TcpConnectionInformation tcpi in tcpConnInfoArray)
+                    {
+                        allocatedPorts[tcpi.LocalEndPoint.Port] = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    {
+                        // Log the exception
+                        System.Diagnostics.Debug.WriteLine($"Error while checking allocated ports: {ex.Message}");
+                    }
+                }
+            }
+            return allocatedPorts;
+        }
+    }
+
+    public static void MarkPortAsUsed(int port)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(port, 1, nameof(port));
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(port, 65535, nameof(port));
+        var ap = AllocatedPorts;
+        if (ap[port])
+        {
+            throw new InvalidOperationException($"Port {port} is already allocated");
+        }
+        ap[port] = true;
+    }
+
+    public static int GetRandomFreePort(int minPort, int maxPort)
+    {
+        var ap = AllocatedPorts;
+        int port;
+        do
+        {
+            port = Random.Shared.Next(minPort, maxPort);
+        } while (ap[port]);
+        ap[port] = true;
+        return port;
+    }
+    #endregion
     public static IResourceBuilder<IISExpressResource> AddIISExpress(this IDistributedApplicationBuilder builder, string name, IISExpressBitness? bitness = default)
     {
         var (actualBitness, path) = bitness.GetIISExpressExe();
