@@ -546,35 +546,4 @@ public static class IISExpressEntensions
                     c.EnvironmentVariables[swa.EnvNameKey] = swa.Key.ToString();
                 }
             });
-
-    public static IResourceBuilder<ProjectResource> WithSystemWebAdapters<T>(
-        this IResourceBuilder<ProjectResource> resourceBuilder,
-        IResourceBuilder<T> iisExpressResource,
-        string? envNameKey = null,
-        string? envNameUrl = null,
-        string endpoint = "http")
-        where T : IResourceWithEndpoints
-        => resourceBuilder.WithSystemWebAdapters(
-            iisExpressResource.Resource,
-            envNameKey,
-            envNameUrl,
-            endpoint);
-
-    public static IResourceBuilder<ProjectResource> WithSystemWebAdapters<T>(
-        this IResourceBuilder<ProjectResource> resourceBuilder,
-        T iisExpressResource,
-        string? envNameKey = null,
-        string? envNameUrl = null,
-        string endpoint = "http")
-        where T : IResourceWithEndpoints
-        => resourceBuilder
-            .WithRelationship(iisExpressResource, "YARP")
-            .WithEnvironment(c =>
-            {
-                if (iisExpressResource.TryGetLastAnnotation<SystemWebAdaptersAnnotation>(out var swa))
-                {
-                    c.EnvironmentVariables[envNameKey ?? swa.EnvNameKey] = swa.Key.ToString();
-                    c.EnvironmentVariables[envNameUrl ?? swa.EnvNameUrl] = iisExpressResource.GetEndpoint(endpoint);
-                }
-            });
 }
