@@ -2,10 +2,11 @@
 
 public class AppPoolArgumentAnnotation : IISExpressArgumentAnnotation
 {
-    private readonly string appPool;
     public const string DefaultAppPool = "Clr4IntegratedAppPool";
 
-    public AppPoolArgumentAnnotation(string appPool = DefaultAppPool) => this.appPool = appPool;
+    public AppPoolArgumentAnnotation(string appPool = DefaultAppPool) => AppPool = appPool;
 
-    public override string ToString() => $"/apppool:{appPool}";
+    public string AppPool { get; }
+
+    public override string ToString() => $"/apppool:{AppPool}";
 }

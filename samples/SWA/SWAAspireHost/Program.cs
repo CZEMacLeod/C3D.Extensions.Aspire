@@ -1,6 +1,4 @@
-using C3D.Extensions.Aspire.IISExpress;
 using Microsoft.Extensions.Hosting;
-
 
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions()
 {
@@ -8,9 +6,23 @@ var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOpt
     AllowUnsecuredTransport = true
 });
 
-var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework", IISExpressBitness.IISExpress64Bit)
-    .WithSystemWebAdapters()
-    .WithHttpHealthCheck("/debug", 204)
+//var framework = builder.AddIISExpress("iis")
+//    .AddSiteProject<Projects.SWAFramework>("framework")
+
+var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
+    //.WithConfigLocation("test.config")  // use a custom config file - will be created if it doesn't exist
+
+    
+    //.WithTemporaryConfig()              // Use a temporary config file each time
+
+    // Note that the config file ports will be used as the default target ports for the endpoints.
+    // There will be a randomly assigned proxy port for each endpoint.
+    //.WithDefaultIISExpressEndpoints()   // Allocate http and https endpoints - the ports will be allocated in the default ranges for IIS Express
+    //                                    // If your config file exists and has http and https endpoints, the ports from the config will be used.
+
+    //.WithHttpsEndpoint(name: "custom-https", targetPort: 40376)   // This will be added to the config file and saved in a temporary location
+
+    //.WithSystemWebAdapters()            // Use this __or__ the AddSystemWebAdapters method below
     .WithUrlForEndpoint("http", u =>
     {
         u.DisplayText = "Framework (http)";
@@ -52,13 +64,29 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework",
         }
     });
 
-builder.AddProject<Projects.SWACore>("core")
-    .WithSystemWebAdapters(framework)
+if (builder.ExecutionContext.IsRunMode)
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        framework.WithHttpHealthCheck("/debug", 204);
+    }
+
+    if (builder.Environment.IsEnvironment("Test"))
+    {
+        framework.WithTemporaryConfig();    // Ensure we use a temp config with random port numbers
+        framework.WithDefaultIISExpressEndpoints();
+    }
+}
+
+
+
+var core = builder.AddProject<Projects.SWACore>("core")
+    //.WithSystemWebAdapters(framework)   // Use this __or__ the AddSystemWebAdapters method below
     .WithHttpsHealthCheck("/alive")
     .WithUrlForEndpoint("http", u =>
     {
         u.DisplayText = "Core (http)";
-u.DisplayOrder = 12;
+        u.DisplayOrder = 12;
     })
     .WithUrlForEndpoint("https", u =>
     {
@@ -89,5 +117,11 @@ u.DisplayOrder = 12;
         }
     })
     .WithUrl("Framework", "Framework Session");
+
+// New way to do SystemWebAdapters instead of WithSystemWebAdapters.
+var swa = builder
+    .AddSystemWebAdapters("swa")
+    .WithFramework(framework)
+    .WithCore(core);
 
 builder.Build().Run();
