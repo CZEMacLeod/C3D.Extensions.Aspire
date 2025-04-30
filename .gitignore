@@ -363,6 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # Ignore lib files handled by libman
-samples/EF6/EF6WebApp/lib/
-samples/SimpleMVC/SimpleMVC/lib/
+samples/EF6/EF6/lib/
+samples/Simple/SimpleMVC/lib/
 samples/SWA/SWAFramework/lib/
