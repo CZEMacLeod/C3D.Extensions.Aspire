@@ -559,7 +559,10 @@ public static class IISExpressEntensions
             return Task.CompletedTask;
         });
 
-        builder.Services.AddAttachDebuggerHook();
+        if (builder.Environment.IsDevelopment())
+        {
+            builder.Services.AddAttachDebuggerHook();
+        }
 
         return builder;
     }

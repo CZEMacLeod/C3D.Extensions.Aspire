@@ -31,7 +31,24 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
 
         appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
         {
-            clientBuilder.AddStandardResilienceHandler();
+            
+            clientBuilder
+                .AddStandardResilienceHandler(res=> {
+                    res.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(120);
+                    res.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(60);
+                    res.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+                });
+            clientBuilder
+                    .ConfigurePrimaryHttpMessageHandler(() =>
+                     {
+                         // Allowing Untrusted SSL Certificates
+                         var handler = new HttpClientHandler();
+                         handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+                         handler.ServerCertificateCustomValidationCallback =
+                             (httpRequestMessage, cert, cetChain, policyErrors) => true;
+
+                         return handler;
+                     });
         });
         return appHost;
     }
@@ -157,6 +174,8 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
         }
         catch (System.Net.Http.HttpRequestException ex)
         {
+            outputHelper.WriteLine(ex.Message);
+
             // Fix
             var resource = app.Services.GetRequiredService<DistributedApplicationModel>().Resources.Single(r=>r.Name=="framework") as IResourceWithEndpoints;
             Assert.NotNull(resource);

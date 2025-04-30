@@ -1,0 +1,97 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+name: Build and Run IIS Express Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    name: Build and Test
+
+    strategy:
+      matrix:
+        configuration: [Release]
+    
+        # Permissions this GitHub Action needs for other things in GitHub
+    permissions: write-all
+
+    runs-on: windows-latest  # For a list of available runner types, refer to
+                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+
+    env:
+      Solution_Name: C3D.Extensions.Aspire.sln
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-quality: 'ga'
+        dotnet-version: |
+            8.0.x
+            9.0.x
+
+    # Add MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v2
+      with:
+        msbuild-architecture: x64
+
+    - name: VSWhere VSToolsPath WebApplicationsTargetPath
+      id: vswhere-paths
+      run: |
+          $vs_path = vswhere -latest -property installationPath
+          Write-Host "vs_path=$vs_path"
+          $vs_tools_path = "$vs_path\MSBuild\Microsoft\VisualStudio\v17.0"
+          Write-Host "vs_tools_path=$vs_tools_path"
+          $web_applications_target_path = "$vs_tools_path\WebApplications\Microsoft.WebApplication.targets"
+          Write-Host "web_applications_target_path=$web_applications_target_path"
+          "vs_tools_path=$vs_tools_path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "web_applications_target_path=$web_applications_target_path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          
+    - name: Ensure we have a valid IIS and dotnet Dev Certificates
+      run: ./build/CreateDevCert.ps1
+
+    - name: Check the dotnet dev cert
+      run: dotnet dev-certs https --check --verbose
+
+    # Restore the application to populate the obj folder with RuntimeIdentifiers
+    - name: Restore the application
+      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true
+      env:
+        Configuration: ${{ matrix.configuration }}
+
+    # Build the application
+    - name: Build the application
+      run: msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true
+      env:
+        Configuration: ${{ matrix.configuration }}
+    
+
+    # TODO: Install and trust the IIS Express certificate
+
+    - name: Run tests
+      run: dotnet test --no-restore --no-build --logger "console;verbosity=detailed" --logger "trx;verbosity=normal" --collect:"XPlat Code Coverage" --results-directory "TestResults"
+      env:
+        Configuration: ${{ matrix.configuration }}
+        # VSToolsPath: ${{ steps.vswhere-vs-tools-path.outputs.vs_tools_path }}
+        WebApplicationsTargetPath: ${{ steps.vswhere-paths.outputs.web_applications_target_path }}
+
+    - name: Upload dotnet test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: dotnet-results
+        path: TestResults
+      # Use always() to always run this step to publish test results when there are test failures
+      if: ${{ always() }}

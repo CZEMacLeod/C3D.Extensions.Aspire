@@ -158,10 +158,10 @@ steps:
     versionSpec: '$(nuget_version)'
     checkLatest: true
 
-# - task: VisualStudioTestPlatformInstaller@1
-#   inputs:
-#     packageFeedSelector: 'nugetOrg'
-#     versionSelector: 'latestStable'
+- task: VisualStudioTestPlatformInstaller@1
+  inputs:
+    packageFeedSelector: 'nugetOrg'
+    versionSelector: 'latestStable'
 
 - task: NuGetCommand@2
   inputs:
@@ -179,25 +179,38 @@ steps:
     clean: true
     msbuildArgs: '/t:$(target) /p:"ProjectToBuild=$(project_to_build)" /p:ContinuousIntegrationBuild=true /p:PackageOutputPath="$(Build.ArtifactStagingDirectory)" /p:BuildUser="$(buildUser)" /p:BuildMachine="$(buildMachine)" /p:AssemblyOriginatorKeyFile="$(snk.secureFilePath)"'
 
-# - task: VSTest@2
-#   inputs:
-#    testSelector: 'testAssemblies'
-#    testAssemblyVer2: |
-#      **\*.Tests.dll
-#      !**\*TestAdapter.dll
-#      !**\*TestCentric*.dll
-#      !**\*TestHost*.dll
-#      !**\*TestPlatform*.dll
-#      !**\obj\**
-#    searchFolder: 'test'
-#    vstestLocationMethod: 'version'
-#    vsTestVersion: 'toolsInstaller'
-#    platform: '$(buildPlatform)'
-#    configuration: '$(buildConfiguration)'
-#    codeCoverageEnabled: true
-#    minimumExpectedTests: 0
-#    failOnMinTestsNotRunFail: false
-#    failIfCoverageEmpty: false
+- task: PowerShell@2
+  displayName: 'Create Dev Cert'
+  inputs:
+    targetType: filePath
+    filePath: 'build/CreateDevCert.ps1'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: custom
+    custom: dev-certs
+    arguments: https --check
+  displayName: Check the dotnet dev cert
+
+- task: VSTest@2
+  inputs:
+   testSelector: 'testAssemblies'
+   testAssemblyVer2: |
+     **\*.Tests.dll
+     !**\*TestAdapter.dll
+     !**\*TestCentric*.dll
+     !**\*TestHost*.dll
+     !**\*TestPlatform*.dll
+     !**\obj\**
+   searchFolder: 'test'
+   vstestLocationMethod: 'version'
+   vsTestVersion: 'toolsInstaller'
+   platform: '$(buildPlatform)'
+   configuration: '$(buildConfiguration)'
+   codeCoverageEnabled: true
+   minimumExpectedTests: 0
+   failOnMinTestsNotRunFail: false
+   failIfCoverageEmpty: false
 
 - task: PowerShell@2
   displayName: 'Detect packages'

@@ -73,6 +73,25 @@ public class Program
             .AddRemoteAppClient(_ => { })
             .AddSessionClient();
 
+        builder.Services.AddServiceDiscovery();
+
+        builder.Services.ConfigureHttpClientDefaults(http =>
+        {
+            // Turn on resilience by default
+            http.AddStandardResilienceHandler(resiliency =>
+            {
+                // Set the default timeout for all requests to 30 seconds
+                var timeout = TimeSpan.FromSeconds(30);
+                resiliency.AttemptTimeout.Timeout = timeout;
+                resiliency.CircuitBreaker.SamplingDuration = timeout * 2;
+                resiliency.TotalRequestTimeout.Timeout = timeout * 3;
+            });
+
+            // Turn on service discovery by default
+            http.AddServiceDiscovery();
+        });
+
+
         var app = builder.Build();
 
         // All health checks must pass for app to be

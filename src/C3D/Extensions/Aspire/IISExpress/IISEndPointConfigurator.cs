@@ -31,16 +31,28 @@ internal class IISEndPointConfigurator
         var appHostConfig = options.Value.ApplicationHostConfig!;
         foreach (var project in appModel.Resources.OfType<IISExpressProjectResource>())
         {
-            if (!project.HasAnnotationOfType<ConfigArgumentAnnotation>())
+            try
             {
-                project.Annotations.Add(new ConfigArgumentAnnotation(appHostConfig));
+                ConfigureIISExpressProjectResource(appHostConfig, project);
             }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "An error occured configuring {ProjectName}: {Message}", project.Name, ex.Message);
+            }
+        }
+    }
 
-            if (project.TryGetLastAnnotation<SiteArgumentAnnotation>(out var site) &&
-                project.TryGetLastAnnotation<ConfigArgumentAnnotation>(out var cfg))
-            {
-                AddBindings(project, site, cfg);
-            }
+    private void ConfigureIISExpressProjectResource(string appHostConfig, IISExpressProjectResource project)
+    {
+        if (!project.HasAnnotationOfType<ConfigArgumentAnnotation>())
+        {
+            project.Annotations.Add(new ConfigArgumentAnnotation(appHostConfig));
+        }
+
+        if (project.TryGetLastAnnotation<SiteArgumentAnnotation>(out var site) &&
+            project.TryGetLastAnnotation<ConfigArgumentAnnotation>(out var cfg))
+        {
+            AddBindings(project, site, cfg);
         }
     }
 
