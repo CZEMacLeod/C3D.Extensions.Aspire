@@ -73,7 +73,7 @@ jobs:
         VSToolsPath: ${{ steps.vswhere-vs-tools-path.outputs.vs_tools_path }}
 
     - name: Upload dotnet test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dotnet-results
         path: TestResults
