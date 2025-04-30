@@ -9,6 +9,8 @@ var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOpt
 });
 
 var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework", IISExpressBitness.IISExpress64Bit)
+    .WithIISProfileSettings()
+    .WithLaunchProfile("IIS Express")
     .WithSystemWebAdapters()
     .WithHttpHealthCheck("/debug", 204)
     .WithUrlForEndpoint("http", u =>

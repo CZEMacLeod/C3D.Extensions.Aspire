@@ -3,6 +3,7 @@ using C3D.Extensions.Aspire.IISExpress;
 using C3D.Extensions.Aspire.IISExpress.Annotations;
 using C3D.Extensions.Aspire.IISExpress.Resources;
 using C3D.Extensions.Aspire.VisualStudioDebug;
+using Grpc.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -149,4 +150,16 @@ public static class IISExpressEntensions
                     c.EnvironmentVariables[envNameUrl ?? swa.EnvNameUrl] = iisExpressResource.GetEndpoint(endpoint);
                 }
             });
+
+    /// <summary>
+    /// Use iisSettings from the project's launchSettings.json file to configure the iisExpress resource.
+    /// </summary>
+    public static IResourceBuilder<IISExpressProjectResource> WithIISProfileSettings(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
+        string iisProfileSettingsName = "iisExpress") => resourceBuilder.WithAnnotation(new IISProfileSettingsAnnotation(iisProfileSettingsName), ResourceAnnotationMutationBehavior.Replace);
+
+    /// <summary>
+    /// Use the launchSettings.json file to configure the IISExpressProject resource.
+    /// </summary>
+    public static IResourceBuilder<IISExpressProjectResource> WithLaunchProfile(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
+        string profileName) => resourceBuilder.WithAnnotation(new LaunchProfileAnnotation(profileName), ResourceAnnotationMutationBehavior.Replace);
 }
