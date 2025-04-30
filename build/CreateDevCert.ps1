@@ -33,7 +33,7 @@ Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object { $_.FriendlyName -eq "
 Get-ChildItem -Path Cert:\LocalMachine\Root | Where-Object { $_.FriendlyName -eq "IIS Express Development Certificate" } | Remove-Item
 
 $oid_obj = New-Object System.Security.Cryptography.Oid($oid, "ASP.NET Core HTTPS development certificate")
-$ext = New-Object System.Security.Cryptography.X509Certificates.X509Extension($oid_obj,	@(2), $true)
+$ext = New-Object System.Security.Cryptography.X509Certificates.X509Extension($oid_obj,	@(2), $false)
 
 $cert = New-SelfSignedCertificate -DnsName "localhost", "localhost" -CertStoreLocation "cert:\LocalMachine\My" -NotAfter (Get-Date).AddYears(5) -FriendlyName "IIS Express Development Certificate" -Extension @( $ext ) -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.1')
 $thumb = $cert.GetCertHashString()
