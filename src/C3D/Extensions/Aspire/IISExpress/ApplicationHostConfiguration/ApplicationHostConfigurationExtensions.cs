@@ -56,11 +56,11 @@ internal static class ApplicationHostConfigurationExtensions
     private static ApplicationHostConfiguration? Load(string configPath)
     {
         ArgumentException.ThrowIfNullOrEmpty(configPath, nameof(configPath));
-        var serializer = new XmlSerializer(typeof(ApplicationHostConfiguration));
         if (!File.Exists(configPath))
         {
             return null;
         }
+        var serializer = new XmlSerializer(typeof(ApplicationHostConfiguration));
         using var fs = File.OpenRead(configPath);
         return serializer.Deserialize(fs) as ApplicationHostConfiguration;
     }
@@ -73,6 +73,13 @@ internal static class ApplicationHostConfigurationExtensions
 
     public static void Save(this ApplicationHostConfiguration config, string fileName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(fileName, nameof(fileName));
+        // Ensure the directory exists
+        var dir = Path.GetDirectoryName(fileName);
+        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
         using var fs = File.OpenWrite(fileName);
         config.Save(fs);
     }
