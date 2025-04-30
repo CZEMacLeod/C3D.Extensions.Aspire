@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting" Version="9.2.0" />
-    <PackageReference Include="envdte" Version="17.13.40008" />
     <ProjectReference Include="..\VisualStudioDebug\C3D.Extensions.Aspire.VisualStudioDebug.csproj" />
     <None Include="build\*.*" Pack="true" PackagePath="build\%(Filename)%(Extension)" Visible="true" />
   </ItemGroup>
