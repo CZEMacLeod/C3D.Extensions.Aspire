@@ -179,6 +179,13 @@ steps:
     clean: true
     msbuildArgs: '/t:$(target) /p:"ProjectToBuild=$(project_to_build)" /p:ContinuousIntegrationBuild=true /p:PackageOutputPath="$(Build.ArtifactStagingDirectory)" /p:BuildUser="$(buildUser)" /p:BuildMachine="$(buildMachine)" /p:AssemblyOriginatorKeyFile="$(snk.secureFilePath)"'
 
+- task: DotNetCoreCLI@2
+  inputs:
+    command: custom
+    custom: dev-certs
+    arguments: https --check --trust
+  displayName: Check and trust the dotnet dev cert
+
 - task: VSTest@2
   inputs:
    testSelector: 'testAssemblies'
