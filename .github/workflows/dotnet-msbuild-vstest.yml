@@ -34,15 +34,31 @@ jobs:
       with:
         fetch-depth: 0
 
-    # Install the .NET Core workload
-    - name: Install .NET Core
+    - name: Install .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-quality: 'ga'
+        dotnet-version: |
+            8.0.x
+            9.0.x
 
-    # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
+    # Add MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v2
+      with:
+        msbuild-architecture: x64
+
+    - name: VSWhere VSToolsPath WebApplicationsTargetPath
+      id: vswhere-paths
+      run: |
+          $vs_path = vswhere -latest -property installationPath
+          Write-Host "vs_path=$vs_path"
+          $vs_tools_path = "$vs_path\MSBuild\Microsoft\VisualStudio\v17.0"
+          Write-Host "vs_tools_path=$vs_tools_path"
+          $web_applications_target_path = "$vs_tools_path\WebApplications\Microsoft.WebApplication.targets"
+          Write-Host "web_applications_target_path=$web_applications_target_path"
+          "vs_tools_path=$vs_tools_path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "web_applications_target_path=$web_applications_target_path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
@@ -55,19 +71,7 @@ jobs:
       run: msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true
       env:
         Configuration: ${{ matrix.configuration }}
-
-    - name: VSWhere VSToolsPath WebApplicationsTargetPath
-      id: vswhere-paths
-      run: |
-          $vs_path = vswhere -latest -property installationPath
-          Write-Host "vs_path=$vs_path"
-          $vs_tools_path = "$vs_path\MSBuild\Microsoft\VisualStudio\v17.0"
-          Write-Host "vs_tools_path=$vs_tools_path"
-          $web_applications_target_path = "$vs_tools_path\WebApplications\Microsoft.WebApplication.targets"
-          Write-Host "web_applications_target_path=$web_applications_target_path"
-          "vs_tools_path=$vs_tools_path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "web_applications_target_path=$web_applications_target_path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append"
-
+        
     - name: Run tests
       run: dotnet test --no-restore --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage" --results-directory "TestResults"
       env:
