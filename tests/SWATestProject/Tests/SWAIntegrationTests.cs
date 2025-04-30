@@ -31,7 +31,19 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
 
         appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
         {
-            clientBuilder.AddStandardResilienceHandler();
+            clientBuilder
+                .AddStandardResilienceHandler();
+            clientBuilder
+                    .ConfigurePrimaryHttpMessageHandler(() =>
+                     {
+                         // Allowing Untrusted SSL Certificates
+                         var handler = new HttpClientHandler();
+                         handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+                         handler.ServerCertificateCustomValidationCallback =
+                             (httpRequestMessage, cert, cetChain, policyErrors) => true;
+
+                         return handler;
+                     });
         });
         return appHost;
     }
