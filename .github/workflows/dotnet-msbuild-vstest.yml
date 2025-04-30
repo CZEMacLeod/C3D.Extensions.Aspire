@@ -63,6 +63,31 @@ jobs:
     - name: Check the dotnet dev cert
       run: dotnet dev-certs https --check --verbose
 
+    - name: Ensure we have a valid IIS Dev Certificate
+      run: |
+        Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object { $_.FriendlyName -eq "IIS Express Development Certificate" } | Remove-Item
+        Get-ChildItem -Path Cert:\LocalMachine\Root | Where-Object { $_.FriendlyName -eq "IIS Express Development Certificate" } | Remove-Item
+
+        $cert = New-SelfSignedCertificate -DnsName "localhost", "localhost" -CertStoreLocation "cert:\LocalMachine\My" -NotAfter (Get-Date).AddYears(5) -FriendlyName "IIS Express Development Certificate"
+        $thumb = $cert.GetCertHashString()
+
+        For ($i=44300; $i -le 44399; $i++) {
+            netsh http delete sslcert ipport=0.0.0.0:$i
+        }
+
+        For ($i=44300; $i -le 44399; $i++) {
+            netsh http add sslcert ipport=0.0.0.0:$i certhash=$thumb appid=`{214124cd-d05b-4309-9af9-9caa44b2b74a`}
+        }
+
+        $StoreScope = 'LocalMachine'
+        $StoreName = 'root'
+
+        $Store = New-Object  -TypeName System.Security.Cryptography.X509Certificates.X509Store  -ArgumentList $StoreName, $StoreScope
+        $Store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+        $Store.Add($cert)
+
+        $Store.Close()
+
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
       run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true
