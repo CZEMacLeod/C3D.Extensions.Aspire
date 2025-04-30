@@ -1,0 +1,81 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+name: Build and Run IIS Express Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    name: Build and Test
+
+    strategy:
+      matrix:
+        configuration: [Release]
+    
+        # Permissions this GitHub Action needs for other things in GitHub
+    permissions: write-all
+
+    runs-on: windows-latest  # For a list of available runner types, refer to
+                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+
+    env:
+      Solution_Name: gs-actions-iis-express-tests.sln                             
+      Test_Project_Path: tests\C3D.IISTestapp.Tests\C3D.IISTestapp.Tests.csproj
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    # Install the .NET Core workload
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+
+    # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v2
+
+    # Restore the application to populate the obj folder with RuntimeIdentifiers
+    - name: Restore the application
+      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true
+      env:
+        Configuration: ${{ matrix.configuration }}
+
+    # Build the application
+    - name: Build the application
+      run: msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true
+      env:
+        Configuration: ${{ matrix.configuration }}
+
+    - name: VSWhere VSToolsPath
+      id: vswhere-vs-tools-path
+      run: |
+          $vs_path = vswhere -latest -property installationPath
+          Write-Host "vs_path=$vs_path"
+          $vs_tools_path = "$vs_path\MSBuild\Microsoft\VisualStudio\v17.0"
+          Write-Host "vs_tools_path=$vs_tools_path"
+          "vs_tools_path=$vs_tools_path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+    - name: Run tests
+      run: dotnet test --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage" --results-directory "TestResults"
+      env:
+        Configuration: ${{ matrix.configuration }}
+        VSToolsPath: ${{ steps.vswhere-vs-tools-path.outputs.vs_tools_path }}
+
+    - name: Upload dotnet test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: dotnet-results
+        path: TestResults
+      # Use always() to always run this step to publish test results when there are test failures
+      if: ${{ always() }}
