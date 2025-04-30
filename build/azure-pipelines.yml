@@ -183,8 +183,8 @@ steps:
   inputs:
     command: custom
     custom: dev-certs
-    arguments: https --check --trust
-  displayName: Check and trust the dotnet dev cert
+    arguments: https --check
+  displayName: Check the dotnet dev cert
 
 - task: VSTest@2
   inputs:

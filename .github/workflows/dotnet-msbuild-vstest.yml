@@ -60,8 +60,8 @@ jobs:
           "vs_tools_path=$vs_tools_path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "web_applications_target_path=$web_applications_target_path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           
-    - name: Trust the dotnet dev cert
-      run: dotnet dev-certs https --check --trust --verbose
+    - name: Check the dotnet dev cert
+      run: dotnet dev-certs https --check --verbose
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
