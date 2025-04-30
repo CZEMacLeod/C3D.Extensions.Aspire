@@ -1,6 +1,8 @@
 # C3D.Extensions.Aspire
 
 [![Build Status](https://dev.azure.com/flexviews/OSS.Build/_apis/build/status%2FCZEMacLeod.C3D.Extensions.Aspire?branchName=main)](https://dev.azure.com/flexviews/OSS.Build/_build/latest?definitionId=88&branchName=main)
+[![Build and Run IIS Express Tests](https://github.com/CZEMacLeod/C3D.Extensions.Aspire/actions/workflows/dotnet-msbuild-vstest.yml/badge.svg)](https://github.com/CZEMacLeod/C3D.Extensions.Aspire/actions/workflows/dotnet-msbuild-vstest.yml)
+
 A set of packages to make it easier to work with IIS Express / System.Web projects, and extend debugging in Aspire.
 
 # AppHost Packages
