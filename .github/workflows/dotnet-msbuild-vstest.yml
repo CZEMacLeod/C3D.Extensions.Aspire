@@ -79,7 +79,7 @@ jobs:
     # TODO: Install and trust the IIS Express certificate
 
     - name: Run tests
-      run: dotnet test --no-restore --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage" --results-directory "TestResults"
+      run: dotnet test --no-restore --no-build --logger "console;verbosity=detailed" --logger "trx;verbosity=normal" --collect:"XPlat Code Coverage" --results-directory "TestResults"
       env:
         Configuration: ${{ matrix.configuration }}
         # VSToolsPath: ${{ steps.vswhere-vs-tools-path.outputs.vs_tools_path }}
