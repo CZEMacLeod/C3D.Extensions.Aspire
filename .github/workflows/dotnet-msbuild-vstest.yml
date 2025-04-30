@@ -56,20 +56,24 @@ jobs:
       env:
         Configuration: ${{ matrix.configuration }}
 
-    - name: VSWhere VSToolsPath
-      id: vswhere-vs-tools-path
+    - name: VSWhere VSToolsPath WebApplicationsTargetPath
+      id: vswhere-paths
       run: |
           $vs_path = vswhere -latest -property installationPath
           Write-Host "vs_path=$vs_path"
           $vs_tools_path = "$vs_path\MSBuild\Microsoft\VisualStudio\v17.0"
           Write-Host "vs_tools_path=$vs_tools_path"
+          $web_applications_target_path = "$vs_tools_path\WebApplications\Microsoft.WebApplication.targets"
+          Write-Host "web_applications_target_path=$web_applications_target_path"
           "vs_tools_path=$vs_tools_path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "web_applications_target_path=$web_applications_target_path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append"
 
     - name: Run tests
-      run: dotnet test --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage" --results-directory "TestResults"
+      run: dotnet test --no-restore --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage" --results-directory "TestResults"
       env:
         Configuration: ${{ matrix.configuration }}
-        VSToolsPath: ${{ steps.vswhere-vs-tools-path.outputs.vs_tools_path }}
+        # VSToolsPath: ${{ steps.vswhere-vs-tools-path.outputs.vs_tools_path }}
+        WebApplicationsTargetPath: ${{ steps.vswhere-paths.outputs.web_applications_target_path }}
 
     - name: Upload dotnet test results
       uses: actions/upload-artifact@v4
