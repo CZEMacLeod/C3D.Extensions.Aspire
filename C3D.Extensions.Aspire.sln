@@ -10,6 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{E1FFCD98
 		build\azure-pipelines.yml = build\azure-pipelines.yml
 		build\ConvertTo-MarkdownTable.ps1 = build\ConvertTo-MarkdownTable.ps1
 		build\CreateDevCert.ps1 = build\CreateDevCert.ps1
+		.github\dependabot.yml = .github\dependabot.yml
 		build\DetectPackages.ps1 = build\DetectPackages.ps1
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
