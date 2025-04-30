@@ -31,8 +31,13 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
 
         appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
         {
+            
             clientBuilder
-                .AddStandardResilienceHandler();
+                .AddStandardResilienceHandler(res=> {
+                    res.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(120);
+                    res.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(60);
+                    res.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+                });
             clientBuilder
                     .ConfigurePrimaryHttpMessageHandler(() =>
                      {
@@ -169,6 +174,8 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
         }
         catch (System.Net.Http.HttpRequestException ex)
         {
+            outputHelper.WriteLine(ex.Message);
+
             // Fix
             var resource = app.Services.GetRequiredService<DistributedApplicationModel>().Resources.Single(r=>r.Name=="framework") as IResourceWithEndpoints;
             Assert.NotNull(resource);

@@ -179,6 +179,12 @@ steps:
     clean: true
     msbuildArgs: '/t:$(target) /p:"ProjectToBuild=$(project_to_build)" /p:ContinuousIntegrationBuild=true /p:PackageOutputPath="$(Build.ArtifactStagingDirectory)" /p:BuildUser="$(buildUser)" /p:BuildMachine="$(buildMachine)" /p:AssemblyOriginatorKeyFile="$(snk.secureFilePath)"'
 
+- task: PowerShell@2
+  displayName: 'Create Dev Cert'
+  inputs:
+    targetType: filePath
+    filePath: 'build/CreateDevCert.ps1'
+
 - task: DotNetCoreCLI@2
   inputs:
     command: custom
