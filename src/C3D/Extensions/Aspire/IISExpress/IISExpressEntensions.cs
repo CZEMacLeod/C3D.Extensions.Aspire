@@ -358,7 +358,10 @@ public static class IISExpressEntensions
 
         builder.Services.AddSingleton<CommandExecutor>();
 
-        builder.Services.AddAttachDebuggerHook();
+        if (builder.Environment.IsDevelopment() && builder.ExecutionContext.IsRunMode)
+        {
+            builder.Services.AddAttachDebuggerHook();
+        }
 
         builder.Eventing.Subscribe<BeforeStartEvent>((@event, token) =>
         {
@@ -559,7 +562,7 @@ public static class IISExpressEntensions
             return Task.CompletedTask;
         });
 
-        if (builder.Environment.IsDevelopment())
+        if (builder.ExecutionContext.IsRunMode && builder.Environment.IsDevelopment())
         {
             builder.Services.AddAttachDebuggerHook();
         }

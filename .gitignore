@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Ignore lib files handled by libman
+samples/EF6/EF6/lib/
+samples/Simple/SimpleMVC/lib/
+samples/SWA/SWAFramework/lib/

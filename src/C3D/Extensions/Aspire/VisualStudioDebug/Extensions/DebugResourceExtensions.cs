@@ -1,6 +1,7 @@
 ﻿using Aspire.Hosting.ApplicationModel;
 using C3D.Extensions.Aspire.VisualStudioDebug;
 using C3D.Extensions.Aspire.VisualStudioDebug.Annotations;
+using Microsoft.Extensions.Hosting;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Aspire.Hosting;
@@ -13,7 +14,7 @@ public static class DebugResourceBuilderExtensions
         DebugMode debugMode = DebugMode.VisualStudio)
         where TResource : ExecutableResource
     {
-        if (!resourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode)
+        if (!resourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode && resourceBuilder.ApplicationBuilder.Environment.IsDevelopment())
         {
             return new DebugBuilder<TResource>(resourceBuilder);
         }
@@ -21,6 +22,7 @@ public static class DebugResourceBuilderExtensions
         {
             throw new ArgumentOutOfRangeException(nameof(debugMode), "Visual Studio debugging is only supported on Windows");
         }
+
         resourceBuilder.ApplicationBuilder.Services.AddAttachDebuggerHook();
         return new DebugBuilder<TResource>(
             resourceBuilder

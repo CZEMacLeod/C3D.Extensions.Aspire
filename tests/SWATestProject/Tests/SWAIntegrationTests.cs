@@ -8,10 +8,13 @@ namespace SWATestProject.Tests;
 public class SWAIntegrationTests(ITestOutputHelper outputHelper)
 {
     private void WriteFunctionName([CallerMemberName] string? caller = null) => outputHelper.WriteLine(caller);
+    private static TimeSpan WaitForHealthyTimeout = TimeSpan.FromSeconds(90);
 
     private async Task<IDistributedApplicationTestingBuilder> CreateAppHostAsync()
     {
         WriteFunctionName();
+
+        //System.Environment.SetEnvironmentVariable("ASPIRE_ENVIRONMENT=Test");
 
         var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.AspireAppHostSWA>([], (dab, host) =>
         {
@@ -50,6 +53,9 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
                          return handler;
                      });
         });
+
+        Assert.Equal("Test", appHost.Environment.EnvironmentName);
+
         return appHost;
     }
 
@@ -103,7 +109,7 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
 
         // Act
         var httpClient = app.CreateHttpClient("framework", "http");
-        await resourceNotificationService.WaitForResourceAsync("framework", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(30));
+        await resourceNotificationService.WaitForResourceAsync("framework", KnownResourceStates.Running).WaitAsync(WaitForHealthyTimeout);
         var response = await httpClient.GetAsync("/");
 
         // Assert
@@ -122,8 +128,8 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
 
         // Act
         var httpClient = app.CreateHttpClient("core", "https");
-        await resourceNotificationService.WaitForResourceAsync("framework", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(30));
-        await resourceNotificationService.WaitForResourceAsync("core", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(30));
+        await resourceNotificationService.WaitForResourceHealthyAsync("framework", WaitBehavior.StopOnResourceUnavailable).WaitAsync(TimeSpan.FromSeconds(90));
+        await resourceNotificationService.WaitForResourceHealthyAsync("core", WaitBehavior.StopOnResourceUnavailable).WaitAsync(TimeSpan.FromSeconds(90));
         var response = await httpClient.GetAsync("/");
 
         // Assert
@@ -142,8 +148,8 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
 
         // Act
         var httpClient = app.CreateHttpClient("framework", "http");
-        await resourceNotificationService.WaitForResourceAsync("framework", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(30));
-        await resourceNotificationService.WaitForResourceAsync("core", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(30));
+        await resourceNotificationService.WaitForResourceHealthyAsync("framework", WaitBehavior.StopOnResourceUnavailable).WaitAsync(WaitForHealthyTimeout);
+        await resourceNotificationService.WaitForResourceHealthyAsync("core", WaitBehavior.StopOnResourceUnavailable).WaitAsync(WaitForHealthyTimeout);
         var response = await httpClient.GetAsync("/framework");
 
         // Assert
@@ -162,7 +168,7 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
         await app.StartAsync();
         
         var httpClient = app.CreateHttpClient("framework", "https");
-        await resourceNotificationService.WaitForResourceAsync("framework", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(30));
+        await resourceNotificationService.WaitForResourceHealthyAsync("framework", WaitBehavior.StopOnResourceUnavailable).WaitAsync(WaitForHealthyTimeout);
 
         try
         {
@@ -200,8 +206,8 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
 
         // Act
         var httpClient = app.CreateHttpClient("core", "https");
-        await resourceNotificationService.WaitForResourceAsync("framework", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(30));
-        await resourceNotificationService.WaitForResourceAsync("core", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(30));
+        await resourceNotificationService.WaitForResourceHealthyAsync("framework", WaitBehavior.StopOnResourceUnavailable).WaitAsync(WaitForHealthyTimeout);
+        await resourceNotificationService.WaitForResourceHealthyAsync("core", WaitBehavior.StopOnResourceUnavailable).WaitAsync(WaitForHealthyTimeout);
         var response = await httpClient.GetAsync("/framework");
 
         // Assert
@@ -214,30 +220,14 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
         WriteFunctionName();
 
         // Arrange
-        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.AspireAppHostSWA>();
-
-        appHost
-            .Services
-            .AddLogging(logging => logging
-                            .ClearProviders()
-                            .SetMinimumLevel(LogLevel.Debug)
-                            .AddDebug()
-                            .AddXunit(outputHelper)
-                            );
-
-        appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
-        {
-            clientBuilder.AddStandardResilienceHandler();
-        });
-
-        await using var app = await appHost.BuildAsync();
+        await using Aspire.Hosting.DistributedApplication app = await ArrangeAppHostAsync();
         var resourceNotificationService = app.Services.GetRequiredService<ResourceNotificationService>();
         await app.StartAsync();
 
         // Act
         var httpClient = app.CreateHttpClient("core", "https");
-        await resourceNotificationService.WaitForResourceAsync("framework", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(30));
-        await resourceNotificationService.WaitForResourceAsync("core", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(30));
+        await resourceNotificationService.WaitForResourceHealthyAsync("framework", WaitBehavior.StopOnResourceUnavailable).WaitAsync(WaitForHealthyTimeout);
+        await resourceNotificationService.WaitForResourceHealthyAsync("core", WaitBehavior.StopOnResourceUnavailable).WaitAsync(WaitForHealthyTimeout);
         var response = await httpClient.GetAsync("/core");
 
         // Assert
