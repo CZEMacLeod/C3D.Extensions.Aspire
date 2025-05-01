@@ -1,10 +1,7 @@
 ﻿using EnvDTE;
-using EnvDTE80;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
-using DTEProcess = EnvDTE90.Process3;
-using Process = System.Diagnostics.Process;
 
 namespace C3D.Extensions.VisualStudioDebug;
 

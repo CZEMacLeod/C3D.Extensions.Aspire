@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using System.Collections;
 using System.Net.NetworkInformation;
 using System.Text.Json;
-using YamlDotNet.Core;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Aspire.Hosting;

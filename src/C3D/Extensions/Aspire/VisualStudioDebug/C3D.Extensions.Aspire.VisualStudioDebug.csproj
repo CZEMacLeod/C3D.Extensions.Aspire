@@ -8,6 +8,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Annotations\ExecuteWhen.cs" />
+    <Compile Remove="WellKnown\Engines.cs" />
+    <Compile Remove="WellKnown\Transports.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Annotations\ExecuteWhen.cs" />
+    <None Include="WellKnown\Engines.cs" />
+    <None Include="WellKnown\Transports.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Aspire.Hosting" Version="9.2.0" />
   </ItemGroup>
   <ItemGroup>
