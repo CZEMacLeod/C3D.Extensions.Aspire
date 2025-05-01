@@ -202,7 +202,7 @@ steps:
      !**\*TestHost*.dll
      !**\*TestPlatform*.dll
      !**\obj\**
-   searchFolder: 'test'
+   searchFolder: 'tests'
    vstestLocationMethod: 'version'
    vsTestVersion: 'toolsInstaller'
    platform: '$(buildPlatform)'
