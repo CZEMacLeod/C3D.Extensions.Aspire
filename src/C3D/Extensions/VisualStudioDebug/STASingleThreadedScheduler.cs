@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 
 namespace C3D.Extensions.VisualStudioDebug;
 

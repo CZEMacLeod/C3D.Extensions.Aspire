@@ -1,5 +1,4 @@
-﻿using Aspire.Hosting;
-using C3D.Extensions.Aspire.IISExpress.Annotations;
+﻿using C3D.Extensions.Aspire.IISExpress.Annotations;
 using C3D.Extensions.Aspire.IISExpress.Configuration;
 using C3D.Extensions.Aspire.IISExpress.Resources;
 using System.Xml.Serialization;
