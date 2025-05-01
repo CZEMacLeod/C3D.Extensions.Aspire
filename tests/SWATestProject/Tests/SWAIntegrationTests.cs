@@ -8,7 +8,7 @@ namespace SWATestProject.Tests;
 public class SWAIntegrationTests(ITestOutputHelper outputHelper)
 {
     private void WriteFunctionName([CallerMemberName] string? caller = null) => outputHelper.WriteLine(caller);
-    private static TimeSpan WaitForHealthyTimeout = TimeSpan.FromSeconds(90);
+    private static readonly TimeSpan WaitForHealthyTimeout = TimeSpan.FromSeconds(90);
 
     private async Task<IDistributedApplicationTestingBuilder> CreateAppHostAsync()
     {
@@ -20,7 +20,7 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
         {
             //dab.DisableDashboard = true;
             dab.EnableResourceLogging = true;
-            host.EnvironmentName = "Test";
+            //host.EnvironmentName = "Test";
             //dab.AssemblyName = this.GetType().Assembly.GetName().Name;
         });
         appHost
@@ -45,16 +45,16 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
                     .ConfigurePrimaryHttpMessageHandler(() =>
                      {
                          // Allowing Untrusted SSL Certificates
-                         var handler = new HttpClientHandler();
-                         handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-                         handler.ServerCertificateCustomValidationCallback =
-                             (httpRequestMessage, cert, cetChain, policyErrors) => true;
+                         var handler = new HttpClientHandler
+                         {
+                             ClientCertificateOptions = ClientCertificateOption.Manual,
+                             ServerCertificateCustomValidationCallback =
+                                 (httpRequestMessage, cert, cetChain, policyErrors) => true
+                         };
 
                          return handler;
                      });
         });
-
-        Assert.Equal("Test", appHost.Environment.EnvironmentName);
 
         return appHost;
     }

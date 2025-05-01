@@ -2,6 +2,7 @@
 using C3D.Extensions.Aspire.VisualStudioDebug;
 using C3D.Extensions.Aspire.VisualStudioDebug.Annotations;
 using Microsoft.Extensions.Hosting;
+using System.Diagnostics;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Aspire.Hosting;
@@ -9,14 +10,67 @@ namespace Aspire.Hosting;
 
 public static class DebugResourceBuilderExtensions
 {
+    public static bool IsDebugMode<TResource>(this IResourceBuilder<TResource> resourceBuilder)
+        where TResource : IResource => resourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode &&
+            resourceBuilder.ApplicationBuilder.Environment.IsDevelopment() &&
+            !resourceBuilder.IsUnderTest();
+
+    public static bool IsUnderTest<TResource>(this IResourceBuilder<TResource> _)
+        where TResource : IResource => new StackTrace().HasTestInStackTrace();
+
+    public static bool IsUnderTest(this IDistributedApplicationBuilder _) => new StackTrace().HasTestInStackTrace();
+    public static bool IsUnderTest(this IHostEnvironment _) => new StackTrace().HasTestInStackTrace();
+
+    public static IResourceBuilder<TResource> WhenDebugMode<TResource>(this IResourceBuilder<TResource> resourceBuilder,
+        Action<IResourceBuilder<TResource>> debugAction,
+        Action<IResourceBuilder<TResource>>? notDebugAction = null
+        )
+        where TResource : IResource
+    {
+        if ((resourceBuilder as IDebugBuilder<TResource>)?.IsDebugMode ?? resourceBuilder.IsDebugMode())
+        {
+            debugAction(resourceBuilder);
+        }
+        else
+        {
+            notDebugAction?.Invoke(resourceBuilder);
+        }
+
+        return resourceBuilder;
+    }
+
+    public static IResourceBuilder<TResource> WhenUnderTest<TResource>(this IResourceBuilder<TResource> resourceBuilder,
+        Action<IResourceBuilder<TResource>> testAction,
+        Action<IResourceBuilder<TResource>>? notTestAction = null
+    )
+        where TResource : IResource
+    {
+        if (resourceBuilder.IsUnderTest())
+        {
+            testAction(resourceBuilder);
+        }
+        else
+        {
+            notTestAction?.Invoke(resourceBuilder);
+        }
+
+        return resourceBuilder;
+    }
+
+    internal static bool HasTestInStackTrace(this StackTrace callStack) =>
+        callStack.GetStackFrames().Any(sf =>
+            sf.GetMethod()?.DeclaringType?.Assembly.GetName().Name == "Aspire.Hosting.Testing");
+
+    private static StackFrame[] GetStackFrames(this StackTrace callStack) => callStack.GetFrames() ?? [];
+
     public static IDebugBuilder<TResource> WithDebugger<TResource>(
         this IResourceBuilder<TResource> resourceBuilder,
         DebugMode debugMode = DebugMode.VisualStudio)
         where TResource : ExecutableResource
     {
-        if (!resourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode && resourceBuilder.ApplicationBuilder.Environment.IsDevelopment())
+        if (!resourceBuilder.IsDebugMode())
         {
-            return new DebugBuilder<TResource>(resourceBuilder);
+            return new DebugBuilder<TResource>(resourceBuilder, false);
         }
         if (debugMode == DebugMode.VisualStudio && !OperatingSystem.IsWindows())
         {
@@ -32,7 +86,7 @@ public static class DebugResourceBuilderExtensions
                 {
                     DebugMode = debugMode
                 },
-                    ResourceAnnotationMutationBehavior.Replace));
+                    ResourceAnnotationMutationBehavior.Replace), true);
     }
 
     internal static bool HasAnnotationOfType<T>(this IResource resource, Func<T, bool> predecate)
@@ -41,18 +95,21 @@ public static class DebugResourceBuilderExtensions
     private class DebugBuilder<TResource> : IDebugBuilder<TResource>
         where TResource : IResource
     {
-        private readonly IResourceBuilder<TResource> resourceBuilder;
+        public DebugBuilder(IResourceBuilder<TResource> resourceBuilder, bool isDebugMode)
+        {
+            ResourceBuilder = resourceBuilder;
+            IsDebugMode = isDebugMode;
+        }
 
-        public DebugBuilder(IResourceBuilder<TResource> resourceBuilder) =>
-            this.resourceBuilder = resourceBuilder;
+        public IResourceBuilder<TResource> ResourceBuilder { get; }
 
-        public IResourceBuilder<TResource> ResourceBuilder => resourceBuilder;
+        public IDistributedApplicationBuilder ApplicationBuilder => ResourceBuilder.ApplicationBuilder;
 
-        public IDistributedApplicationBuilder ApplicationBuilder => resourceBuilder.ApplicationBuilder;
+        public TResource Resource => ResourceBuilder.Resource;
 
-        public TResource Resource => resourceBuilder.Resource;
+        public bool IsDebugMode { get; }
 
         public IResourceBuilder<TResource> WithAnnotation<TAnnotation>(TAnnotation annotation, ResourceAnnotationMutationBehavior behavior = ResourceAnnotationMutationBehavior.Append) where TAnnotation : IResourceAnnotation =>
-            resourceBuilder.WithAnnotation(annotation, behavior);
+            ResourceBuilder.WithAnnotation(annotation, behavior);
     }
 }
