@@ -3,6 +3,7 @@ using C3D.Extensions.Aspire.VisualStudioDebug;
 using C3D.Extensions.Aspire.VisualStudioDebug.Annotations;
 using C3D.Extensions.Aspire.VisualStudioDebug.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Aspire.Hosting;
@@ -70,7 +71,8 @@ public static class DebugBuilderExtensions
     public static IDebugBuilder<TResource> WithDebuggerHealthcheck<TResource>(this IDebugBuilder<TResource> debugBuilder)
         where TResource : IResource
     {
-        if (!debugBuilder.ResourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode)
+        if (!debugBuilder.ResourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode || 
+            !debugBuilder.ResourceBuilder.ApplicationBuilder.Environment.IsDevelopment())
         {
             return debugBuilder;
         }

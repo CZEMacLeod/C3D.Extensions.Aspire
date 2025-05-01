@@ -14,6 +14,8 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
     {
         WriteFunctionName();
 
+        //System.Environment.SetEnvironmentVariable("ASPIRE_ENVIRONMENT=Test");
+
         var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.AspireAppHostSWA>([], (dab, host) =>
         {
             //dab.DisableDashboard = true;
@@ -51,6 +53,9 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
                          return handler;
                      });
         });
+
+        Assert.Equal("Test", appHost.Environment.EnvironmentName);
+
         return appHost;
     }
 
@@ -215,23 +220,7 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
         WriteFunctionName();
 
         // Arrange
-        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.AspireAppHostSWA>();
-
-        appHost
-            .Services
-            .AddLogging(logging => logging
-                            .ClearProviders()
-                            .SetMinimumLevel(LogLevel.Debug)
-                            .AddDebug()
-                            .AddXunit(outputHelper)
-                            );
-
-        appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
-        {
-            clientBuilder.AddStandardResilienceHandler();
-        });
-
-        await using var app = await appHost.BuildAsync();
+        await using Aspire.Hosting.DistributedApplication app = await ArrangeAppHostAsync();
         var resourceNotificationService = app.Services.GetRequiredService<ResourceNotificationService>();
         await app.StartAsync();
 
