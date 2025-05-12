@@ -1,5 +1,6 @@
 ﻿using C3D.Extensions.Aspire.VisualStudioDebug;
 using C3D.Extensions.VisualStudioDebug;
+using C3D.Extensions.Aspire.Fluent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Diagnostics;

@@ -2,7 +2,6 @@
 using C3D.Extensions.Aspire.VisualStudioDebug;
 using C3D.Extensions.Aspire.VisualStudioDebug.Annotations;
 using Microsoft.Extensions.Hosting;
-using System.Diagnostics;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Aspire.Hosting;
@@ -10,39 +9,31 @@ namespace Aspire.Hosting;
 
 public static class DebugResourceBuilderExtensions
 {
-    public static bool IsDebugMode<TResource>(this IResourceBuilder<TResource> resourceBuilder)
-        where TResource : IResource => resourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode &&
-            resourceBuilder.ApplicationBuilder.Environment.IsDevelopment() &&
-            !resourceBuilder.IsUnderTest();
-
-
+    public static bool IsDebugMode<TResource>(this IResourceBuilder<TResource> resourceBuilder, params string[]? environments)
+        where TResource : IResource =>
+            (resourceBuilder as IDebugBuilder<TResource>)?.IsDebugMode ?? (
+            resourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode &&
+            ((environments is null || environments.Length == 0) ?
+                resourceBuilder.ApplicationBuilder.Environment.IsDevelopment() :
+                environments.Any(e => resourceBuilder.ApplicationBuilder.Environment.IsEnvironment(e))
+                ) &&
+            !resourceBuilder.IsUnderTest());
 
     public static IResourceBuilder<TResource> WhenDebugMode<TResource>(this IResourceBuilder<TResource> resourceBuilder,
-        Action<IResourceBuilder<TResource>> debugAction,
-        Action<IResourceBuilder<TResource>>? notDebugAction = null
+        Func<IResourceBuilder<TResource>, IResourceBuilder<TResource>> debugAction,
+        Func<IResourceBuilder<TResource>, IResourceBuilder<TResource>>? notDebugAction = null,
+        params string[]? environments
         )
-        where TResource : IResource
-    {
-        if ((resourceBuilder as IDebugBuilder<TResource>)?.IsDebugMode ?? resourceBuilder.IsDebugMode())
-        {
-            debugAction(resourceBuilder);
-        }
-        else
-        {
-            notDebugAction?.Invoke(resourceBuilder);
-        }
-
-        return resourceBuilder;
-    }
-
-
+        where TResource : IResource =>
+        resourceBuilder.IsDebugMode(environments) ? debugAction(resourceBuilder) : notDebugAction?.Invoke(resourceBuilder) ?? resourceBuilder;
 
     public static IDebugBuilder<TResource> WithDebugger<TResource>(
         this IResourceBuilder<TResource> resourceBuilder,
-        DebugMode debugMode = DebugMode.VisualStudio)
+        DebugMode debugMode = DebugMode.VisualStudio,
+        params string[]? environments)
         where TResource : ExecutableResource
     {
-        if (!resourceBuilder.IsDebugMode())
+        if (!resourceBuilder.IsDebugMode(environments))
         {
             return new DebugBuilder<TResource>(resourceBuilder, false);
         }
@@ -56,11 +47,8 @@ public static class DebugResourceBuilderExtensions
             resourceBuilder
                 .WithEnvironment("Launch_Debugger_On_Start",
                                  debugMode == DebugMode.Environment ? "true" : null)
-                .WithAnnotation<DebugAttachAnnotation>(new()
-                {
-                    DebugMode = debugMode
-                },
-                    ResourceAnnotationMutationBehavior.Replace), true);
+                .WithAnnotation(new DebugAttachAnnotation() { DebugMode = debugMode },
+                                ResourceAnnotationMutationBehavior.Replace), true);
     }
 
     internal static bool HasAnnotationOfType<T>(this IResource resource, Func<T, bool> predecate)
