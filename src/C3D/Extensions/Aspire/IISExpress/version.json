@@ -5,8 +5,11 @@
     ".",
     "../Directory.Build.props",
     "../Directory.Build.targets",
-    "../../VisualStudioDebug",
-    "../VisualStudioDebug"
+    "../VisualStudioDebug",
+    "../../Directory.Build.props",
+    "../../Directory.Build.targets",
+    "../../HostingExtensions.Shared",
+    "../../VisualStudioDebug"
   ],
   "publicReleaseRefSpec": [
     "^refs/heads/main$", // we release out of main

@@ -3,7 +3,6 @@ using C3D.Extensions.Aspire.VisualStudioDebug;
 using C3D.Extensions.Aspire.VisualStudioDebug.Annotations;
 using C3D.Extensions.Aspire.VisualStudioDebug.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Aspire.Hosting;
@@ -15,7 +14,7 @@ public static class DebugBuilderExtensions
         string engine)
         where TResource : IResource
     {
-        if (!debugBuilder.ResourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode)
+        if (!debugBuilder.IsDebugMode)
         {
             return debugBuilder;
         }
@@ -27,7 +26,7 @@ public static class DebugBuilderExtensions
         bool skip = true)
         where TResource : IResource
     {
-        if (!debugBuilder.ResourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode)
+        if (!debugBuilder.IsDebugMode)
         {
             return debugBuilder;
         }
@@ -42,7 +41,7 @@ public static class DebugBuilderExtensions
         params string[] engines)
     where TResource : IResource
     {
-        if (!debugBuilder.ResourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode)
+        if (!debugBuilder.IsDebugMode)
         {
             return debugBuilder;
         }
@@ -60,7 +59,7 @@ public static class DebugBuilderExtensions
         string transport, string? qualifier = null)
         where TResource : IResource
     {
-        if (!debugBuilder.ResourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode)
+        if (!debugBuilder.IsDebugMode)
         {
             return debugBuilder;
         }
@@ -71,8 +70,7 @@ public static class DebugBuilderExtensions
     public static IDebugBuilder<TResource> WithDebuggerHealthcheck<TResource>(this IDebugBuilder<TResource> debugBuilder)
         where TResource : IResource
     {
-        if (!debugBuilder.ResourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode || 
-            !debugBuilder.ResourceBuilder.ApplicationBuilder.Environment.IsDevelopment())
+        if (!debugBuilder.IsDebugMode)
         {
             return debugBuilder;
         }

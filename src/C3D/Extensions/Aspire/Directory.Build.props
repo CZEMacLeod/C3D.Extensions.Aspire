@@ -1,0 +1,11 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <AssemblyTitle>$(AssemblyTitle) Aspire</AssemblyTitle>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageTag Include="Aspire" />
+  </ItemGroup>
+</Project>

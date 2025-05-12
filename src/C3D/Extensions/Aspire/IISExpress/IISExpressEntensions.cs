@@ -4,7 +4,6 @@ using C3D.Extensions.Aspire.IISExpress;
 using C3D.Extensions.Aspire.IISExpress.Annotations;
 using C3D.Extensions.Aspire.IISExpress.Configuration;
 using C3D.Extensions.Aspire.IISExpress.Resources;
-using C3D.Extensions.Aspire.VisualStudioDebug;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -433,7 +432,7 @@ public static class IISExpressEntensions
 
         builder.Resource.Sites.Add(resource);
 
-        var siteResource = builder.ApplicationBuilder.AddResource(resource)
+        return builder.ApplicationBuilder.AddResource(resource)
             .WithParentRelationship(builder)
             .WithAnnotation(project)
             .WithAnnotation(new SiteArgumentAnnotation(name))
@@ -444,14 +443,8 @@ public static class IISExpressEntensions
                 {
                     c.Args.Add(arg);
                 }
-            });
-
-        if (builder.ApplicationBuilder.Environment.IsDevelopment())
-        {
-            siteResource.WithDebugger();
-        }
-
-        return siteResource;
+            })
+            .WithDebugger();
     }
 
     /// <summary>
@@ -520,17 +513,6 @@ public static class IISExpressEntensions
     public static IResourceBuilder<IISExpressSiteResource> WithSiteConfiguration(this IResourceBuilder<IISExpressSiteResource> builder, Action<Site> configure)
         => builder.WithAnnotation(new SiteConfigurationAnnotation(configure));
 
-    public static IResourceBuilder<IISExpressSiteResource> WithDebugger(this IResourceBuilder<IISExpressSiteResource> resourceBuilder, DebugMode debugMode = DebugMode.VisualStudio)
-        => DebugResourceBuilderExtensions.WithDebugger(resourceBuilder, debugMode)
-            .WithDebugEngine(C3D.Extensions.VisualStudioDebug.WellKnown.Engines.Net4)
-            .WithDebuggerHealthcheck();
-
-    public static IResourceBuilder<IISExpressProjectResource> WithDebugger(this IResourceBuilder<IISExpressProjectResource> resourceBuilder,
-      DebugMode debugMode = DebugMode.VisualStudio) =>
-        DebugResourceBuilderExtensions.WithDebugger(resourceBuilder, debugMode)
-            .WithDebugEngine(C3D.Extensions.VisualStudioDebug.WellKnown.Engines.Net4)
-            .WithDebuggerHealthcheck();
-
     public static IDistributedApplicationBuilder AddIISExpressConfiguration(this IDistributedApplicationBuilder builder,
         Action<IISExpressOptions>? options = null)
     {
@@ -586,7 +568,7 @@ public static class IISExpressEntensions
         resourceName ??= appName;
         var resource = new IISExpressProjectResource(resourceName, iisExpress, projectPath, actualBitness);
 
-        var resourceBuilder = builder.AddResource(resource)
+        return builder.AddResource(resource)
             .WithAnnotation(app)
             .WithAnnotation(new SiteArgumentAnnotation(appName))
             .WithArgs(c =>
@@ -597,14 +579,8 @@ public static class IISExpressEntensions
                     }
                 })
             .WithOtlpExporter()
-            .ExcludeFromManifest();
-
-        if (builder.Environment.IsDevelopment())
-        {
-            resourceBuilder.WithDebugger();
-        }
-
-        return resourceBuilder;
+            .ExcludeFromManifest()
+            .WithDebugger();
     }
 
     /// <summary>

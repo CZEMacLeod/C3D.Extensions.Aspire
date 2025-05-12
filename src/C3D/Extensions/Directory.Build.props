@@ -11,11 +11,11 @@
     <LangVersion>Latest</LangVersion>
     <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
     <NoWarn>$(NoWarn);NU5128;SA0001</NoWarn>
-    <AssemblyTitle>C3D Extensions Aspire</AssemblyTitle>
+    <AssemblyTitle>C3D Extensions</AssemblyTitle>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageTag Include="CZEM" />
-    <PackageTag Include="Aspire" />
+    <PackageTag Include="C3D" />
   </ItemGroup>
 </Project>

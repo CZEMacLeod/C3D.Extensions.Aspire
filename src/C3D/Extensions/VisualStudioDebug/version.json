@@ -4,7 +4,7 @@
   "pathFilters": [
     ".",
     "../Directory.Build.props",
-    "../Directory.Build.targets",
+    "../Directory.Build.targets"
   ],
   "publicReleaseRefSpec": [
     "^refs/heads/main$", // we release out of main

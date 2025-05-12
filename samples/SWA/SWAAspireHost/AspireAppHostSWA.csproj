@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\src\C3D\Extensions\Aspire\Fluent\C3D.Extensions.Aspire.Fluent.csproj" IsAspireProjectResource="false" />
     <ProjectReference Include="..\..\..\src\C3D\Extensions\Aspire\IISExpress\C3D.Extensions.Aspire.IISExpress.csproj" IsAspireProjectResource="false" />
   </ItemGroup>
   <Import Project="..\..\..\src\C3D\Extensions\Aspire\IISExpress\build\C3D.Extensions.Aspire.IISExpress.props" />

@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyTitle>$(AssemblyTitle) Output Watcher</AssemblyTitle>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,4 +17,7 @@
 
   <Import Project="..\..\HostingExtensions.Shared\HostingExtensions.Shared.projitems" Label="Shared" />
 
+  <ItemGroup>
+    <PackageTag Include="Output" />
+  </ItemGroup>
 </Project>

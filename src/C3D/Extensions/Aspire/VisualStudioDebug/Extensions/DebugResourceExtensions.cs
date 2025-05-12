@@ -9,14 +9,33 @@ namespace Aspire.Hosting;
 
 public static class DebugResourceBuilderExtensions
 {
+    public static bool IsDebugMode<TResource>(this IResourceBuilder<TResource> resourceBuilder, params string[]? environments)
+        where TResource : IResource =>
+            (resourceBuilder as IDebugBuilder<TResource>)?.IsDebugMode ?? (
+            resourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode &&
+            ((environments is null || environments.Length == 0) ?
+                resourceBuilder.ApplicationBuilder.Environment.IsDevelopment() :
+                environments.Any(resourceBuilder.ApplicationBuilder.Environment.IsEnvironment)
+                ) &&
+            !resourceBuilder.IsUnderTest());
+
+    public static IResourceBuilder<TResource> WhenDebugMode<TResource>(this IResourceBuilder<TResource> resourceBuilder,
+        Func<IResourceBuilder<TResource>, IResourceBuilder<TResource>> debugAction,
+        Func<IResourceBuilder<TResource>, IResourceBuilder<TResource>>? notDebugAction = null,
+        params string[]? environments
+        )
+        where TResource : IResource =>
+        resourceBuilder.IsDebugMode(environments) ? debugAction(resourceBuilder) : notDebugAction?.Invoke(resourceBuilder) ?? resourceBuilder;
+
     public static IDebugBuilder<TResource> WithDebugger<TResource>(
         this IResourceBuilder<TResource> resourceBuilder,
-        DebugMode debugMode = DebugMode.VisualStudio)
+        DebugMode debugMode = DebugMode.VisualStudio,
+        params string[]? environments)
         where TResource : ExecutableResource
     {
-        if (!resourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode && resourceBuilder.ApplicationBuilder.Environment.IsDevelopment())
+        if (!resourceBuilder.IsDebugMode(environments))
         {
-            return new DebugBuilder<TResource>(resourceBuilder);
+            return new DebugBuilder<TResource>(resourceBuilder, false);
         }
         if (debugMode == DebugMode.VisualStudio && !OperatingSystem.IsWindows())
         {
@@ -28,11 +47,8 @@ public static class DebugResourceBuilderExtensions
             resourceBuilder
                 .WithEnvironment("Launch_Debugger_On_Start",
                                  debugMode == DebugMode.Environment ? "true" : null)
-                .WithAnnotation<DebugAttachAnnotation>(new()
-                {
-                    DebugMode = debugMode
-                },
-                    ResourceAnnotationMutationBehavior.Replace));
+                .WithAnnotation(new DebugAttachAnnotation() { DebugMode = debugMode },
+                                ResourceAnnotationMutationBehavior.Replace), true);
     }
 
     internal static bool HasAnnotationOfType<T>(this IResource resource, Func<T, bool> predecate)
@@ -41,18 +57,21 @@ public static class DebugResourceBuilderExtensions
     private class DebugBuilder<TResource> : IDebugBuilder<TResource>
         where TResource : IResource
     {
-        private readonly IResourceBuilder<TResource> resourceBuilder;
+        public DebugBuilder(IResourceBuilder<TResource> resourceBuilder, bool isDebugMode)
+        {
+            ResourceBuilder = resourceBuilder;
+            IsDebugMode = isDebugMode;
+        }
 
-        public DebugBuilder(IResourceBuilder<TResource> resourceBuilder) =>
-            this.resourceBuilder = resourceBuilder;
+        public IResourceBuilder<TResource> ResourceBuilder { get; }
 
-        public IResourceBuilder<TResource> ResourceBuilder => resourceBuilder;
+        public IDistributedApplicationBuilder ApplicationBuilder => ResourceBuilder.ApplicationBuilder;
 
-        public IDistributedApplicationBuilder ApplicationBuilder => resourceBuilder.ApplicationBuilder;
+        public TResource Resource => ResourceBuilder.Resource;
 
-        public TResource Resource => resourceBuilder.Resource;
+        public bool IsDebugMode { get; }
 
         public IResourceBuilder<TResource> WithAnnotation<TAnnotation>(TAnnotation annotation, ResourceAnnotationMutationBehavior behavior = ResourceAnnotationMutationBehavior.Append) where TAnnotation : IResourceAnnotation =>
-            resourceBuilder.WithAnnotation(annotation, behavior);
+            ResourceBuilder.WithAnnotation(annotation, behavior);
     }
 }
