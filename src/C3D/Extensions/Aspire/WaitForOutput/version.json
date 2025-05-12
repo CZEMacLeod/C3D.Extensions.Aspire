@@ -5,7 +5,10 @@
     ".",
     "../Directory.Build.props",
     "../Directory.Build.targets",
-    "../OutputWatcher"
+    "../OutputWatcher",
+    "../../Directory.Build.props",
+    "../../Directory.Build.targets",
+    "../../HostingExtensions.Shared"
   ],
   "publicReleaseRefSpec": [
     "^refs/heads/main$", // we release out of main
