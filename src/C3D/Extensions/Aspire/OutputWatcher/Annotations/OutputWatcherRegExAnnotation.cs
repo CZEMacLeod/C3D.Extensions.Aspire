@@ -18,22 +18,37 @@ public class OutputWatcherRegExAnnotation : OutputWatcherAnnotationBase, IValueP
 
     public override string PredicateName => matcher.ToString();
 
-    public Func<OutputWatcherRegExAnnotation, ValueTask<string?>> ValueFunc { get; set; } = 
-        static async (annotation) =>
+    public Func<OutputWatcherRegExAnnotation, ValueTask<string?>> ValueFunc { get; set; } =
+        static async annotation =>
             await Task.FromResult(annotation.properties["Match"]?.ToString());
 
     public async ValueTask<string?> GetValueAsync(CancellationToken cancellationToken = default) => await ValueFunc(this);
 
+    public Func<Group, KeyValuePair<string, object>?> GroupValueFunc { get; set; } =
+        static group => new(group.Name, group.Value);
+
     public override bool IsMatch(string message)
     {
-        if (matcher.IsMatch(message))
+        var match = matcher.Match(message);
+        if (match.Success)
         {
-            properties["Match"] = matcher.Match(message).Value;
-            foreach (var groupName in matcher.GetGroupNames())
+            properties["Match"] = match.Value;
+            foreach (Group group in match.Groups)
             {
-                properties[groupName] = matcher.Match(message).Groups[groupName].Value;
+                var kvp = GroupValueFunc(group);
+                if (kvp is not null)
+                {
+                    if (kvp.Value.Value is null)
+                    {
+                        properties.Remove(kvp.Value.Key);
+                    }
+                    else
+                    {
+                        properties[kvp.Value.Key] = kvp.Value.Value;
+                    }
+                }
             }
         }
-        return matcher.IsMatch(message);
+        return match.Success;
     }
 }

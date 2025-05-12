@@ -6,10 +6,10 @@
     "../Directory.Build.props",
     "../Directory.Build.targets"
   ],
-  "publicReleaseRefSpec": [
-    "^refs/heads/main$", // we release out of main
-    "^refs/heads/rel/v\\d+\\.\\d+" // we also release tags starting with rel/N.N
-  ],
+  //"publicReleaseRefSpec": [
+  //  "^refs/heads/main$", // we release out of main
+  //  "^refs/heads/rel/v\\d+\\.\\d+" // we also release tags starting with rel/N.N
+  //],
   "nugetPackageVersion": {
     "semVer": 2
   },

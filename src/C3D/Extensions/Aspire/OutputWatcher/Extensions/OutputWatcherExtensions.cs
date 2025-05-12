@@ -106,6 +106,18 @@ public static partial class OutputWatcherExtensions
         where TAnnotation : OutputWatcherRegExAnnotation
             => ReferenceExpression.Create($"{builder.GetValueProvider(property, formatter)}");
 
+    public static OutputWatcherBuilder<TResource, TAnnotation> CreateReferenceExpression<TResource, TAnnotation>(this
+        OutputWatcherBuilder<TResource, TAnnotation> builder,
+        string property,
+        out ReferenceExpression referenceExpression,
+        Func<object?, ValueTask<string?>>? formatter = null)
+        where TResource : IResource
+        where TAnnotation : OutputWatcherRegExAnnotation
+    {
+        referenceExpression = builder.GetReferenceExpression(property, formatter);
+        return builder;
+    }
+
     public static OutputWatcherBuilder<TResource, TAnnotation> OnMatched<TResource, TAnnotation>(this
         OutputWatcherBuilder<TResource, TAnnotation> builder,
         Func<OutputMatchedEvent, CancellationToken, Task> matchedAction)

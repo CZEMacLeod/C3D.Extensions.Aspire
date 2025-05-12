@@ -20,6 +20,7 @@ internal partial class Program
                                   .WaitFor(sqldb!)
             )
             .WithOutputWatcher(GetMagic(), true, "magic")
+            .CreateReferenceExpression("magic", out var magicNumber)
             .OnMatched((o, c) =>
             {
                 var logger = o.ServiceProvider.GetRequiredService<ILogger<Program>>();
@@ -38,9 +39,10 @@ internal partial class Program
 
         // The GetMagic Regex will capture the magic number from the console app output and store it as a property
         // The output string will be of the format "{number} is the magic number!"
-        // Once it is detected, we can store it in a ReferenceExpression to be used as an environment variable in the next project
+        // Once it is detected, we can retrieve it using a ReferenceExpression, as an environment variable in the next project
 
-        var magicNumber = console.GetReferenceExpression("magic");
+        // The fluent CreateReferenceExpression method above is just a shortcut for 
+        // var magicNumber = console.GetReferenceExpression("magic");
 
         // webapp won't start until console has output the message "Ready Now..."
         // Note that 'console' does not have to exit, it just has to output the message
