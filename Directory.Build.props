@@ -14,6 +14,11 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <OpenTelemetryVersion>1.12.0</OpenTelemetryVersion>
+    <OpenTelemetryBetaVersion>1.12.0-beta.1</OpenTelemetryBetaVersion>
+  </PropertyGroup>
+
   <!-- Suppress APIRE004 warning by setting _IsExecutable to true in MSBuild.SDK.SystemWeb based projects -->
   <!-- TODO: Investigate if we can just set that to true and what effect that might have -->
   <Target Name="GetTargetFrameworksWithPlatformForSingleTargetFramework" /> <!-- Ensure target exists for non net projects -->

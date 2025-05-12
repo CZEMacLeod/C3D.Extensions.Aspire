@@ -3,8 +3,9 @@
   "version": "0.1",
   "pathFilters": [
     ".",
-    "../Directory.Build.props",
-    "../Directory.Build.targets"
+    "../../../Directory.Build.props",
+    "../../../Directory.Build.targets",
+    "../../../../../../Directory.Build.props"
   ],
   //"publicReleaseRefSpec": [
   //  "^refs/heads/main$", // we release out of main
