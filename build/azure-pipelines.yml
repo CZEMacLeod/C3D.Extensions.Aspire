@@ -211,6 +211,19 @@ steps:
    minimumExpectedTests: 0
    failOnMinTestsNotRunFail: false
    failIfCoverageEmpty: false
+   resultsFolder: '$(Agent.TempDirectory)\TestResults'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '**/*.TRX'
+    searchFolder: '$(Agent.TempDirectory)\TestResults'
+
+- task: PublishCodeCoverageResults@2
+  inputs:
+    summaryFileLocation: '$(Agent.TempDirectory)\TestResults\**\coverage.cobertura.xml' 
+    pathToSources: '$(System.DefaultWorkingDirectory)' 
+    failIfCoverageEmpty: false
 
 - task: PowerShell@2
   displayName: 'Detect packages'
