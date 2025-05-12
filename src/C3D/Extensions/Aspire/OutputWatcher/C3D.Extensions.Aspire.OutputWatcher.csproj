@@ -17,4 +17,7 @@
 
   <Import Project="..\..\HostingExtensions.Shared\HostingExtensions.Shared.projitems" Label="Shared" />
 
+  <ItemGroup>
+    <PackageTag Include="Output" />
+  </ItemGroup>
 </Project>

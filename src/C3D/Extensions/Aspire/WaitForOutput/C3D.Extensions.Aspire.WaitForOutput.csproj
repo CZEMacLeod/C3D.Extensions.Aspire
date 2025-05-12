@@ -15,4 +15,9 @@
     <ProjectReference Include="..\OutputWatcher\C3D.Extensions.Aspire.OutputWatcher.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageTag Include="WaitFor" />
+    <PackageTag Include="Output" />
+  </ItemGroup>
+
 </Project>

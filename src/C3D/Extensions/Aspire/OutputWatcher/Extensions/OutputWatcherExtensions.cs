@@ -4,7 +4,9 @@ using C3D.Extensions.Aspire.OutputWatcher.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.RegularExpressions;
 
+#pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Aspire.Hosting;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 public static partial class OutputWatcherExtensions
 {
@@ -103,4 +105,21 @@ public static partial class OutputWatcherExtensions
         where TResource : IResource
         where TAnnotation : OutputWatcherRegExAnnotation
             => ReferenceExpression.Create($"{builder.GetValueProvider(property, formatter)}");
+
+    public static OutputWatcherBuilder<TResource, TAnnotation> OnMatched<TResource, TAnnotation>(this
+        OutputWatcherBuilder<TResource, TAnnotation> builder,
+        Func<OutputMatchedEvent, CancellationToken, Task> matchedAction)
+        where TResource : IResource
+        where TAnnotation : OutputWatcherAnnotationBase
+    {
+        var key = builder.Key;
+        builder.ApplicationBuilder.Eventing.Subscribe<OutputMatchedEvent>(builder.Resource, async (o, c) =>
+        {
+            if (o.Key == key)
+            {
+                await matchedAction(o, c);
+            }
+        });
+        return builder;
+    }
 }

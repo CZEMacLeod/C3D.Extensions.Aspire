@@ -20,7 +20,7 @@ internal partial class Program
                                   .WaitFor(sqldb!)
             )
             .WithOutputWatcher(GetMagic(), true, "magic")
-            .WhenMatched((o, c) =>
+            .OnMatched((o, c) =>
             {
                 var logger = o.ServiceProvider.GetRequiredService<ILogger<Program>>();
                 // Get the magic number from the console app
