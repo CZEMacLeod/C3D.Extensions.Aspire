@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\src\C3D\Extensions\Aspire\Fluent\C3D.Extensions.Aspire.Fluent.csproj" IsAspireProjectResource="false" />
     <ProjectReference Include="..\..\..\src\C3D\Extensions\Aspire\WaitForOutput\C3D.Extensions.Aspire.WaitForOutput.csproj" IsAspireProjectResource="false" />
     <ProjectReference Include="..\ConsoleApp\WaitForConsole.ConsoleApp.csproj" />
     <ProjectReference Include="..\WebApplication\WaitForConsole.WebApp.csproj" />

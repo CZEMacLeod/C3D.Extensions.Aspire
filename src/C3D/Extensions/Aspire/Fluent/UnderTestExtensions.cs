@@ -1,4 +1,5 @@
 ﻿using Aspire.Hosting.ApplicationModel;
+using C3D.Extensions.Aspire.Fluent;
 using C3D.Extensions.Aspire.Fluent.Annotations;
 using Microsoft.Extensions.Hosting;
 using System.Diagnostics;
@@ -31,9 +32,27 @@ public static class UnderTestExtensions
                 testAction(resourceBuilder) :
                 notTestAction?.Invoke(resourceBuilder) ?? resourceBuilder;
 
-    public static bool ContainsAspireTesting(this StackTrace callStack) =>
-        callStack.GetStackFrames().Any(sf =>
-            sf.GetMethod()?.DeclaringType?.Assembly.GetName().Name == "Aspire.Hosting.Testing");
+    public static IResourceBuilder<TResource> WhenNotUnderTest<TResource>(this IResourceBuilder<TResource> resourceBuilder,
+            Func<IResourceBuilder<TResource>, IResourceBuilder<TResource>> notTestAction,
+            Func<IResourceBuilder<TResource>, IResourceBuilder<TResource>>? testAction = null
+        )
+        where TResource : IResource => resourceBuilder.IsUnderTest() ?
+            testAction?.Invoke(resourceBuilder) ?? resourceBuilder:
+            notTestAction(resourceBuilder);
 
-    private static StackFrame[] GetStackFrames(this StackTrace callStack) => callStack.GetFrames() ?? [];
+    public static IResourceBuilder<TResource>? WhenUnderTest<TResource>(this IDistributedApplicationBuilder builder,
+            Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?> testAction,
+            Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?>? notTestAction = null
+        )
+        where TResource : IResource => builder.IsUnderTest() ?
+            testAction(builder) :
+            notTestAction?.Invoke(builder);
+
+    public static IResourceBuilder<TResource>? WhenNotUnderTest<TResource>(this IDistributedApplicationBuilder builder,
+            Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?> notTestAction,
+            Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?>? testAction = null
+        )
+        where TResource : IResource => builder.IsUnderTest() ?
+            testAction?.Invoke(builder) :
+            notTestAction(builder);
 }

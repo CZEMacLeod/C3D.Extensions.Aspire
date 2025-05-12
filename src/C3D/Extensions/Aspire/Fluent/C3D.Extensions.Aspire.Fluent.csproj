@@ -11,4 +11,8 @@
     <PackageReference Include="Aspire.Hosting" Version="9.2.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageTag Include="Fluent" />
+    <PackageTag Include="Testing" />
+  </ItemGroup>
 </Project>

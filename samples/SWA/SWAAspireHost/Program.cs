@@ -1,3 +1,4 @@
+using Aspire.Hosting;
 using Microsoft.Extensions.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions()
@@ -33,13 +34,6 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
         u.DisplayText = "Framework (https)";
         u.DisplayOrder = 22;
     })
-    .WithEnvironment(e =>
-    {
-        if (e.ExecutionContext.IsRunMode && builder.Environment.IsDevelopment())
-        {
-            e.EnvironmentVariables["WaitForDebugger"] = "true";
-        }
-    })
     .WithUrls(u =>
     {
         if (u.Resource.TryGetEndpoints(out var eps))
@@ -63,9 +57,10 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
             }
         }
     })
-    .WhenDebugMode(r => r.WithHttpHealthCheck("/debug", 204))
+    .WhenDebugMode(r => r.WithHttpHealthCheck("/debug", 204)
+                         .WithEnvironment("WaitForDebugger", "true"))
     .WhenUnderTest(r => r.WithTemporaryConfig()    // Ensure we use a temp config with random port numbers
-                        .WithDefaultIISExpressEndpoints())
+                         .WithDefaultIISExpressEndpoints())
     ;
 
 var core = builder.AddProject<Projects.SWACore>("core")
