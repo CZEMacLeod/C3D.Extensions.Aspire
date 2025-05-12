@@ -77,9 +77,6 @@ jobs:
       run: msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true
       env:
         Configuration: ${{ matrix.configuration }}
-    
-
-    # TODO: Install and trust the IIS Express certificate
 
     - name: Run tests
       run: dotnet test --no-restore --no-build --logger "console;verbosity=detailed" --logger "trx;verbosity=normal" --collect:"XPlat Code Coverage" --results-directory "TestResults"
