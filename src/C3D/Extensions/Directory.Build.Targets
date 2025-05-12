@@ -12,7 +12,7 @@
     <Copyright>©2025 Cynthia Z E Macleod All rights reserved.</Copyright>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageReadmeFile Condition="EXISTS('$(MSBuildProjectDirectory)\README.md')">README.md</PackageReadmeFile>
-    <PackageLicensePath>$(MSBuildThisFileDirectory)..\$(PackageLicenseFile)</PackageLicensePath>
+    <PackageLicensePath>$(MSBuildThisFileDirectory)..\..\..\$(PackageLicenseFile)</PackageLicensePath>
     <PackageProjectUrl>https://github.com/CZEMacLeod/C3D.Extensions.Aspire</PackageProjectUrl>
     <RepositoryUrl>https://github.com/CZEMacLeod/C3D.Extensions.Aspire.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

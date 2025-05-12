@@ -47,4 +47,45 @@ public static class OperationModeExtensions
         where TResource : IResource => resourceBuilder.ApplicationBuilder.ExecutionContext.IsInspectMode ?
             inspectMode(resourceBuilder) :
             otherModes?.Invoke(resourceBuilder) ?? resourceBuilder;
+
+    public static IResourceBuilder<TResource>? WhenOperationMode<TResource>(this IDistributedApplicationBuilder builder,
+        DistributedApplicationOperation mode,
+        Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?> matchedMode,
+        Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?>? otherModes)
+        where TResource : IResource => builder.ExecutionContext.Operation == mode ?
+            matchedMode(builder) :
+            otherModes?.Invoke(builder);
+
+    public static IResourceBuilder<TResource>? WhenOperationMode<TResource>(this IDistributedApplicationBuilder builder,
+        Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?>? runMode,
+        Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?>? publishMode,
+        Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?>? otherModes)
+        where TResource : IResource => builder.ExecutionContext.Operation switch
+        {
+            DistributedApplicationOperation.Run => runMode?.Invoke(builder),
+            DistributedApplicationOperation.Publish => publishMode?.Invoke(builder),
+            _ => otherModes?.Invoke(builder)
+        };
+
+    public static IResourceBuilder<TResource>? WhenRunMode<TResource>(this IDistributedApplicationBuilder builder,
+        Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?> runMode,
+        Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?>? otherModes)
+        where TResource : IResource => builder.ExecutionContext.IsRunMode ?
+            runMode(builder) :
+            otherModes?.Invoke(builder);
+
+    public static IResourceBuilder<TResource>? WhenPublishMode<TResource>(this IDistributedApplicationBuilder builder,
+        Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?> publishMode,
+        Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?>? otherModes)
+        where TResource : IResource => builder.ExecutionContext.IsPublishMode ?
+            publishMode(builder) :
+            otherModes?.Invoke(builder);
+
+    [Experimental("ASPIREPUBLISHERS001")]
+    public static IResourceBuilder<TResource>? WhenInspectMode<TResource>(this IDistributedApplicationBuilder builder,
+        Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?> inspectMode,
+        Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?>? otherModes)
+        where TResource : IResource => builder.ExecutionContext.IsInspectMode ?
+            inspectMode(builder) :
+            otherModes?.Invoke(builder);
 }

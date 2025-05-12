@@ -23,6 +23,10 @@ A set of packages to make it easier to work with IIS Express / System.Web projec
 [![NuGet package](https://img.shields.io/nuget/v/C3D.Extensions.Aspire.WaitForOutput.svg)](https://nuget.org/packages/C3D.Extensions.Aspire.WaitForOutput)
 [![NuGet downloads](https://img.shields.io/nuget/dt/C3D.Extensions.Aspire.WaitForOutput.svg)](https://nuget.org/packages/C3D.Extensions.Aspire.WaitForOutput)
 
+## [C3D.Extensions.Aspire.Fluent](src/C3D/Extensions/Aspire/Fluent/README.md)
+[![NuGet package](https://img.shields.io/nuget/v/C3D.Extensions.Aspire.Fluent.svg)](https://nuget.org/packages/C3D.Extensions.Aspire.Fluent)
+[![NuGet downloads](https://img.shields.io/nuget/dt/C3D.Extensions.Aspire.Fluent.svg)](https://nuget.org/packages/C3D.Extensions.Aspire.Fluent)
+
 
 # Support Packages
 
