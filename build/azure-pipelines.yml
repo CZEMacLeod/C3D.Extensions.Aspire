@@ -214,12 +214,14 @@ steps:
    resultsFolder: '$(Agent.TempDirectory)\TestResults'
 
 - task: PublishTestResults@2
+  condition: always()
   inputs:
     testResultsFormat: 'VSTest'
     testResultsFiles: '**/*.TRX'
     searchFolder: '$(Agent.TempDirectory)\TestResults'
 
 - task: PublishCodeCoverageResults@2
+  condition: always()
   inputs:
     summaryFileLocation: '$(Agent.TempDirectory)\TestResults\**\coverage.cobertura.xml' 
     pathToSources: '$(System.DefaultWorkingDirectory)' 
