@@ -108,6 +108,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Extensions", "Extensions", 
 		src\C3D\Extensions\Directory.Build.Targets = src\C3D\Extensions\Directory.Build.Targets
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OutputWatcherTestProject", "tests\OutputWatcherTestProject\OutputWatcherTestProject.csproj", "{13C2606F-B44D-4127-AD96-908F152E124B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -198,6 +200,10 @@ Global
 		{DB624833-016B-4022-9B6E-1D8184EFFCB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB624833-016B-4022-9B6E-1D8184EFFCB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB624833-016B-4022-9B6E-1D8184EFFCB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13C2606F-B44D-4127-AD96-908F152E124B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13C2606F-B44D-4127-AD96-908F152E124B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13C2606F-B44D-4127-AD96-908F152E124B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13C2606F-B44D-4127-AD96-908F152E124B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -235,6 +241,7 @@ Global
 		{D5AA99D3-6A86-4816-8C06-41207B980DBD} = {41C173BA-2164-4764-B195-C815E37F36F7}
 		{D099C3D1-6952-4B8D-B7D9-4D623C1D6B26} = {B02941E8-EB9F-4AFF-8383-6B231DD01754}
 		{41C173BA-2164-4764-B195-C815E37F36F7} = {D099C3D1-6952-4B8D-B7D9-4D623C1D6B26}
+		{13C2606F-B44D-4127-AD96-908F152E124B} = {8AFDAAF4-2682-43BB-B576-24B96DFDEF49}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7A2C1EF4-C8A0-49A5-8198-0BFBDFE2EE42}
