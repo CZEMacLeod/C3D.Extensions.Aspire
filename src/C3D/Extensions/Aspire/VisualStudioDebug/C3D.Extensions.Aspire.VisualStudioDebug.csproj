@@ -24,6 +24,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\VisualStudioDebug\C3D.Extensions.VisualStudioDebug.csproj" />
+    <ProjectReference Include="..\Fluent\C3D.Extensions.Aspire.Fluent.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageTag Include="VisualStudio" />

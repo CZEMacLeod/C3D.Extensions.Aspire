@@ -15,11 +15,7 @@ public static class DebugResourceBuilderExtensions
             resourceBuilder.ApplicationBuilder.Environment.IsDevelopment() &&
             !resourceBuilder.IsUnderTest();
 
-    public static bool IsUnderTest<TResource>(this IResourceBuilder<TResource> _)
-        where TResource : IResource => new StackTrace().HasTestInStackTrace();
 
-    public static bool IsUnderTest(this IDistributedApplicationBuilder _) => new StackTrace().HasTestInStackTrace();
-    public static bool IsUnderTest(this IHostEnvironment _) => new StackTrace().HasTestInStackTrace();
 
     public static IResourceBuilder<TResource> WhenDebugMode<TResource>(this IResourceBuilder<TResource> resourceBuilder,
         Action<IResourceBuilder<TResource>> debugAction,
@@ -39,29 +35,7 @@ public static class DebugResourceBuilderExtensions
         return resourceBuilder;
     }
 
-    public static IResourceBuilder<TResource> WhenUnderTest<TResource>(this IResourceBuilder<TResource> resourceBuilder,
-        Action<IResourceBuilder<TResource>> testAction,
-        Action<IResourceBuilder<TResource>>? notTestAction = null
-    )
-        where TResource : IResource
-    {
-        if (resourceBuilder.IsUnderTest())
-        {
-            testAction(resourceBuilder);
-        }
-        else
-        {
-            notTestAction?.Invoke(resourceBuilder);
-        }
 
-        return resourceBuilder;
-    }
-
-    internal static bool HasTestInStackTrace(this StackTrace callStack) =>
-        callStack.GetStackFrames().Any(sf =>
-            sf.GetMethod()?.DeclaringType?.Assembly.GetName().Name == "Aspire.Hosting.Testing");
-
-    private static StackFrame[] GetStackFrames(this StackTrace callStack) => callStack.GetFrames() ?? [];
 
     public static IDebugBuilder<TResource> WithDebugger<TResource>(
         this IResourceBuilder<TResource> resourceBuilder,

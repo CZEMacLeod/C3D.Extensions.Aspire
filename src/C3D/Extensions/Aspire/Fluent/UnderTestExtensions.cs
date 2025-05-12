@@ -3,7 +3,9 @@ using C3D.Extensions.Aspire.Fluent.Annotations;
 using Microsoft.Extensions.Hosting;
 using System.Diagnostics;
 
+#pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Aspire.Hosting;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 public static class UnderTestExtensions
 {

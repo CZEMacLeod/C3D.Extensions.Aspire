@@ -12,7 +12,7 @@ public static class DebuggerServicesExtensions
 {
     public static IServiceCollection AddAttachDebuggerHook(this IServiceCollection services)
     {
-        if (OperatingSystem.IsWindows() && !(new StackTrace().HasTestInStackTrace()))
+        if (OperatingSystem.IsWindows() && !(new StackTrace().ContainsAspireTesting()))
         {
             services
                 .InsertHostedService<AttachDebuggerHook>()
