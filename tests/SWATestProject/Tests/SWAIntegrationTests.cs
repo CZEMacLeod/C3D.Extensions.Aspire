@@ -2,6 +2,8 @@ using Microsoft.Extensions.Logging;
 using System.Runtime.CompilerServices;
 using Xunit.Abstractions;
 using Aspire.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
 namespace SWATestProject.Tests;
 
@@ -20,9 +22,16 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
         {
             //dab.DisableDashboard = true;
             dab.EnableResourceLogging = true;
+            //dab.AllowUnsecuredTransport = true;
+
+            //ConfigureOtlpOverHttp(host, outputHelper.WriteLine);
+
             //host.EnvironmentName = "Test";
             //dab.AssemblyName = this.GetType().Assembly.GetName().Name;
         });
+
+        ConfigureOtlpOverHttp(appHost.Configuration, outputHelper.WriteLine);
+
         appHost
             .Services
             .AddLogging(logging => logging
@@ -59,6 +68,21 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
         return appHost;
     }
 
+    private static void ConfigureOtlpOverHttp(HostApplicationBuilderSettings host, Action<string>? logMessage = null) =>
+        ConfigureOtlpOverHttp(host.Configuration!, logMessage);
+
+    private static void ConfigureOtlpOverHttp(ConfigurationManager configuration, Action<string>? logMessage = null)
+    {
+        var port = IISExpressEntensions.GetRandomFreePort(20000, 30000);
+        var otlp = new UriBuilder("https", "localhost", port).ToString();
+        logMessage?.Invoke($"Setting OTLP endpoint to {otlp}");
+        var dict = new Dictionary<string, string?>()
+        {
+            { "DOTNET_DASHBOARD_OTLP_HTTP_ENDPOINT_URL" , otlp },
+            { "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL" , null }
+        };
+        configuration.AddInMemoryCollection(dict);
+    }
 
     private async Task<Aspire.Hosting.DistributedApplication> ArrangeAppHostAsync()
     {

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Logs;
@@ -14,7 +15,13 @@ public class OpenTelemeteryApplication : System.Web.HttpApplication
 
     protected virtual void Application_Start()
     {
+        var config = CreateConfigurationManager();
+        ConfigureConfiguration(config);
+
         var services = CreateServiceCollection();
+
+        services.AddSingleton(config);
+        services.AddSingleton<IConfiguration>(config);
 
         services.AddLogging(logging =>
         {
@@ -31,14 +38,32 @@ public class OpenTelemeteryApplication : System.Web.HttpApplication
                 ot.IncludeScopes = true;
                 ot.ParseStateValues = true;
             });
+            ConfigureLogging(logging);
         });
 
-        services.AddOpenTelemetry()
+        var otlp = services.AddOpenTelemetry()
             .ConfigureResource(ConfigureResource)
             .WithTracing(ConfigureTracing)
             .WithMetrics(ConfigureMetrics)
-            .WithLogging(ConfigureLogging)
-            .UseOtlpExporter();
+            .WithLogging(ConfigureLogging);
+
+        System.Diagnostics.Debug.WriteLine("{0}={1}", "OTEL_EXPORTER_OTLP_PROTOCOL", config.GetValue<string>("OTEL_EXPORTER_OTLP_PROTOCOL"));
+        System.Diagnostics.Debug.WriteLine("{0}={1}", "OTEL_EXPORTER_OTLP_ENDPOINT", config.GetValue<string>("OTEL_EXPORTER_OTLP_ENDPOINT"));
+
+        if (config.GetValue<string>("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf") == "http/protobuf"
+            && !string.IsNullOrEmpty(config.GetValue<string>("OTEL_EXPORTER_OTLP_ENDPOINT", "")))
+        {
+            otlp.UseOtlpExporter();
+            System.Diagnostics.Debug.WriteLine("OTLP Exporter enabled");
+        }
+        else
+        {
+            //System.Diagnostics.Debug.WriteLine("OTLP Exporter not enabled");
+            System.Console.WriteLine("OTEL_EXPORTER_OTLP_PROTOCOL={0}", config.GetValue<string>("OTEL_EXPORTER_OTLP_PROTOCOL"));
+            System.Console.WriteLine("OTEL_EXPORTER_OTLP_ENDPOINT={0}", config.GetValue<string>("OTEL_EXPORTER_OTLP_ENDPOINT"));
+            System.Console.WriteLine("OTLP Exporter not enabled");
+            otlp.WithLogging(l => l.AddConsoleExporter());
+        }
 
         ConfigureServiceProvider(services);
 
@@ -50,6 +75,11 @@ public class OpenTelemeteryApplication : System.Web.HttpApplication
     }
 
     protected virtual void ConfigureResource(ResourceBuilder builder) { }
+
+    protected virtual void ConfigureLogging(ILoggingBuilder logging)
+    {
+
+    }
 
     protected virtual void ConfigureLogging(LoggerProviderBuilder logging) { }
 
@@ -68,6 +98,12 @@ public class OpenTelemeteryApplication : System.Web.HttpApplication
     }
 
     protected virtual ServiceCollection CreateServiceCollection() => new();
+    protected virtual ConfigurationManager CreateConfigurationManager() => new();
+
+    protected virtual void ConfigureConfiguration(ConfigurationManager configuration)
+    {
+        configuration.AddEnvironmentVariables();
+    }
 
     protected virtual void ConfigureServiceProvider(ServiceCollection services) { }
 

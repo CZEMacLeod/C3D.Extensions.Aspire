@@ -9,8 +9,12 @@
 
   
   <ItemGroup Label="OpenTelemetry">
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.4" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.4" />
-
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.4" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.12.0" />
+    
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetryVersion)" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OpenTelemetryVersion)" />
 

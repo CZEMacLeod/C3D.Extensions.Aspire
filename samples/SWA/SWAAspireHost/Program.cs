@@ -60,7 +60,9 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
     .WhenDebugMode(r => r.WithHttpHealthCheck("/debug", 204)
                          .WithEnvironment("WaitForDebugger", "true"))
     .WhenUnderTest(r => r.WithTemporaryConfig()    // Ensure we use a temp config with random port numbers
-                         .WithDefaultIISExpressEndpoints())
+                         .WithDefaultIISExpressEndpoints()
+                   //,r => r.WithTemporaryConfig()
+                   )
     ;
 
 var core = builder.AddProject<Projects.SWACore>("core")
