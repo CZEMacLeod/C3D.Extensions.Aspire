@@ -15,7 +15,7 @@ public static class DebugResourceBuilderExtensions
             resourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode &&
             ((environments is null || environments.Length == 0) ?
                 resourceBuilder.ApplicationBuilder.Environment.IsDevelopment() :
-                environments.Any(e => resourceBuilder.ApplicationBuilder.Environment.IsEnvironment(e))
+                environments.Any(resourceBuilder.ApplicationBuilder.Environment.IsEnvironment)
                 ) &&
             !resourceBuilder.IsUnderTest());
 
