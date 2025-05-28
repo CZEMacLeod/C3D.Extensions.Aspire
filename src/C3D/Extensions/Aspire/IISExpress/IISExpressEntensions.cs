@@ -300,7 +300,7 @@ public static class IISExpressEntensions
         return new Binding()
         {
             Protocol = endpoint.UriScheme,
-            BindingInformation = $"*:{port}:localhost"
+            BindingInformation = $"*:{port}:{endpoint.TargetHost}"
         };
     }
 
@@ -324,9 +324,12 @@ public static class IISExpressEntensions
 
     internal static EndpointAnnotation AddOrUpdateEndpointFromBinding(this IResourceWithEndpoints resource, Binding binding)
     {
+        var hostName = string.IsNullOrEmpty(binding.HostName) ? "localhost" : binding.HostName;
+
         var endpoint = resource.Annotations
                             .OfType<EndpointAnnotation>()
-                            .Where(ea => StringComparer.OrdinalIgnoreCase.Equals(ea.Name, binding.Protocol))
+                            .Where(ea => StringComparer.OrdinalIgnoreCase.Equals(ea.Name, binding.Protocol) && 
+                                         StringComparer.OrdinalIgnoreCase.Equals(ea.TargetHost, hostName))
                             .SingleOrDefault();
         if (endpoint is null)
         {
@@ -335,12 +338,16 @@ public static class IISExpressEntensions
         }
         else if (endpoint.TargetPort is not null && endpoint.TargetPort != binding.Port)
         {
-            endpoint = new EndpointAnnotation(System.Net.Sockets.ProtocolType.Tcp, name: $"{binding.Protocol}-{binding.Port}");
+            endpoint = new EndpointAnnotation(System.Net.Sockets.ProtocolType.Tcp, name: $"{binding.Protocol}-{binding.Port}-{hostName}");
             resource.Annotations.Add(endpoint);
         }
-        MarkPortAsUsed(binding.Port);
+        if (hostName != "localhost")
+        {
+            MarkPortAsUsed(binding.Port);
+        }
 
         endpoint.TargetPort = binding.Port;
+        endpoint.TargetHost = hostName;
         endpoint.UriScheme = binding.Protocol;
         //endpoint.IsProxied = false;
 

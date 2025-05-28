@@ -197,6 +197,8 @@ public class Binding
     public string BindingInformation { get; set; }
 
     public int Port => int.Parse(BindingInformation.Split(':')[1]);
+
+    public string HostName => BindingInformation.Split(':')[2];
 }
 
 [XmlRoot(ElementName = "bindings")]

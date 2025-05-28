@@ -90,6 +90,7 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "SWAShared", "samples\SWA\SW
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{8AFDAAF4-2682-43BB-B576-24B96DFDEF49}"
 	ProjectSection(SolutionItems) = preProject
+		tests\default.runsettings = tests\default.runsettings
 		tests\Directory.Build.props = tests\Directory.Build.props
 		tests\Directory.Build.Targets = tests\Directory.Build.Targets
 	EndProjectSection
