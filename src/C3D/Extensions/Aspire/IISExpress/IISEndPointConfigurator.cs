@@ -113,7 +113,7 @@ internal class IISEndPointConfigurator
             var matches = new Dictionary<EndpointAnnotation, Configuration.Binding>();
             foreach (var binding in siteConfig.Bindings.Binding)
             {
-                var endpoint = project.AddOrUpdateEndpointFromBinding(binding);
+                var endpoint = project.AddOrUpdateEndpointFromBinding(binding, logger);
                 matches[endpoint] = binding;
             }
 
