@@ -341,7 +341,7 @@ public static class IISExpressEntensions
             endpoint = new EndpointAnnotation(System.Net.Sockets.ProtocolType.Tcp, name: $"{binding.Protocol}-{binding.Port}-{hostName}");
             resource.Annotations.Add(endpoint);
         }
-        if (hostName != "localhost")
+        if (StringComparer.OrdinalIgnoreCase.Equals(hostName,"localhost"))
         {
             MarkPortAsUsed(binding.Port);
         }
