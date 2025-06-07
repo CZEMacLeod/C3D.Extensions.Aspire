@@ -43,6 +43,9 @@
     
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNet" Version="$(OpenTelemetryBetaVersion)" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNet.TelemetryHttpModule" Version="$(OpenTelemetryBetaVersion)" />
+
+    <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="$(OpenTelemetryBetaVersion)" />
+    
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />

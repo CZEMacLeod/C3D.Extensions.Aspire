@@ -111,17 +111,25 @@ namespace EF6WebApp
                 {
                     tracing
                         .AddAspNetInstrumentation()
-                        .AddHttpClientInstrumentation();
+                        .AddHttpClientInstrumentation()
+                        .AddSqlClientInstrumentation(
+                            options => options.SetDbStatementForText = 
+                                (configuration.GetValue<string>("Environment") == "Development")
+                        )
+                        ;
                 })
                 .WithMetrics(metrics=>
                 {
                     metrics
                         .AddAspNetInstrumentation()
                         .AddAspNetInstrumentation()
-                        .AddRuntimeInstrumentation();
+                        .AddRuntimeInstrumentation()
+                        .AddSqlClientInstrumentation()
+                        ;
                 })
                 .WithLogging(logging=>
                 {
+
                 })
             .UseOtlpExporter();
 
