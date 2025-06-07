@@ -207,6 +207,19 @@ public static class IISExpressEntensions
         ap[port] = true;
     }
 
+    public static bool TryMarkPortAsUsed(int port)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(port, 1, nameof(port));
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(port, 65535, nameof(port));
+        var ap = AllocatedPorts;
+        if (ap[port])
+        {
+            return false; // Port is already allocated
+        }
+        ap[port] = true;
+        return true; // Successfully marked the port as used
+    }
+
     public static int GetRandomFreePort(int minPort, int maxPort)
     {
         var ap = AllocatedPorts;
@@ -300,7 +313,7 @@ public static class IISExpressEntensions
         return new Binding()
         {
             Protocol = endpoint.UriScheme,
-            BindingInformation = $"*:{port}:localhost"
+            BindingInformation = $"*:{port}:{endpoint.TargetHost}"
         };
     }
 
@@ -322,11 +335,14 @@ public static class IISExpressEntensions
         });
     }
 
-    internal static EndpointAnnotation AddOrUpdateEndpointFromBinding(this IResourceWithEndpoints resource, Binding binding)
+    internal static EndpointAnnotation AddOrUpdateEndpointFromBinding(this IResourceWithEndpoints resource, Binding binding, ILogger? logger = null)
     {
+        var hostName = string.IsNullOrEmpty(binding.HostName) ? "localhost" : binding.HostName;
+
         var endpoint = resource.Annotations
                             .OfType<EndpointAnnotation>()
-                            .Where(ea => StringComparer.OrdinalIgnoreCase.Equals(ea.Name, binding.Protocol))
+                            .Where(ea => StringComparer.OrdinalIgnoreCase.Equals(ea.Name, binding.Protocol) &&
+                                         StringComparer.OrdinalIgnoreCase.Equals(ea.TargetHost, hostName))
                             .SingleOrDefault();
         if (endpoint is null)
         {
@@ -335,14 +351,27 @@ public static class IISExpressEntensions
         }
         else if (endpoint.TargetPort is not null && endpoint.TargetPort != binding.Port)
         {
-            endpoint = new EndpointAnnotation(System.Net.Sockets.ProtocolType.Tcp, name: $"{binding.Protocol}-{binding.Port}");
+            endpoint = new EndpointAnnotation(System.Net.Sockets.ProtocolType.Tcp, name: $"{binding.Protocol}-{binding.Port}-{hostName}");
             resource.Annotations.Add(endpoint);
         }
-        MarkPortAsUsed(binding.Port);
+        if (StringComparer.OrdinalIgnoreCase.Equals(hostName, "localhost"))
+        {
+            MarkPortAsUsed(binding.Port);
+        }
+        else
+        {
+            if (!TryMarkPortAsUsed(binding.Port))
+            {
+                logger?.LogWarning("Port {Port} is already allocated. Ensure each binding has a unique hostName.", binding.Port);
+            }
+            logger?.LogInformation("It is recommended to use 'localhost' with unique ports for IIS Express endpoints to avoid port conflicts.");
+            // If the hostName is not localhost, we disable the proxy support so that SNI and host name routing works as expected.
+            endpoint.IsProxied = false;
+        }
 
         endpoint.TargetPort = binding.Port;
+        endpoint.TargetHost = hostName;
         endpoint.UriScheme = binding.Protocol;
-        //endpoint.IsProxied = false;
 
         return endpoint;
     }

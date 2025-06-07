@@ -28,17 +28,17 @@ function ImportCert {
 }
 
 $oid = "1.3.6.1.4.1.311.84.1.1"
-Get-ChildItem -Path Cert:\CurrentUser\My | Where-Object { $_.Extensions | Where-Object { $_.Oid.Value -eq $oid } } | Remove-Item
-Get-ChildItem -Path Cert:\CurrentUser\Root | Where-Object { $_.Extensions | Where-Object { $_.Oid.Value -eq $oid } } | Remove-Item
+Get-ChildItem -Path Cert:\CurrentUser\My | Where-Object { $_.Extensions | Where-Object { $_.Oid.Value -eq $oid } } | Remove-Item -Force
+Get-ChildItem -Path Cert:\CurrentUser\Root | Where-Object { $_.Extensions | Where-Object { $_.Oid.Value -eq $oid } } | Remove-Item -Force
 
-Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object { $_.Extensions | Where-Object { $_.Oid.Value -eq $oid } } | Remove-Item
-Get-ChildItem -Path Cert:\LocalMachine\Root | Where-Object { $_.Extensions | Where-Object { $_.Oid.Value -eq $oid } } | Remove-Item
+Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object { $_.Extensions | Where-Object { $_.Oid.Value -eq $oid } } | Remove-Item -Force
+Get-ChildItem -Path Cert:\LocalMachine\Root | Where-Object { $_.Extensions | Where-Object { $_.Oid.Value -eq $oid } } | Remove-Item -Force
 
-Get-ChildItem -Path Cert:\CurrentUser\My | Where-Object { $_.FriendlyName -eq "IIS Express Development Certificate" } | Remove-Item
-Get-ChildItem -Path Cert:\CurrentUser\Root | Where-Object { $_.FriendlyName -eq "IIS Express Development Certificate" } | Remove-Item
+Get-ChildItem -Path Cert:\CurrentUser\My | Where-Object { $_.FriendlyName -eq "IIS Express Development Certificate" } | Remove-Item -Force
+Get-ChildItem -Path Cert:\CurrentUser\Root | Where-Object { $_.FriendlyName -eq "IIS Express Development Certificate" } | Remove-Item -Force
 
-Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object { $_.FriendlyName -eq "IIS Express Development Certificate" } | Remove-Item
-Get-ChildItem -Path Cert:\LocalMachine\Root | Where-Object { $_.FriendlyName -eq "IIS Express Development Certificate" } | Remove-Item
+Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object { $_.FriendlyName -eq "IIS Express Development Certificate" } | Remove-Item -Force
+Get-ChildItem -Path Cert:\LocalMachine\Root | Where-Object { $_.FriendlyName -eq "IIS Express Development Certificate" } | Remove-Item -Force
 
 $oid_obj = New-Object System.Security.Cryptography.Oid($oid, "ASP.NET Core HTTPS development certificate")
 $ext = New-Object System.Security.Cryptography.X509Certificates.X509Extension($oid_obj,	@(2), $false)

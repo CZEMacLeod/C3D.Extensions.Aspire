@@ -8,10 +8,10 @@ public class BundleConfig
     public static void RegisterBundles(BundleCollection bundles)
     {
         bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
-                    "~/lib/jquery/jquery-{version}.js"));
+                    "~/lib/jquery/jquery.js"));
 
         bundles.Add(new ScriptBundle("~/bundles/jqueryval").Include(
-                    "~/lib/jquery-validate/jquery.validate.js*").Include(
+                    "~/lib/jquery-validate/jquery.validate.js").Include(
                     "~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"));
 
         // Use the development version of Modernizr to develop with and learn from. Then, when you're
