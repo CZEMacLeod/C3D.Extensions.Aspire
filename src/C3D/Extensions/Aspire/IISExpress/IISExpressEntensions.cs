@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Collections;
+using System.Diagnostics;
 using System.Net.NetworkInformation;
 using System.Text.Json;
 
@@ -432,7 +433,7 @@ public static class IISExpressEntensions
 
         builder.Resource.Sites.Add(resource);
 
-        return builder.ApplicationBuilder.AddResource(resource)
+        var site = builder.ApplicationBuilder.AddResource(resource)
             .WithParentRelationship(builder)
             .WithAnnotation(project)
             .WithAnnotation(new SiteArgumentAnnotation(name))
@@ -443,8 +444,14 @@ public static class IISExpressEntensions
                 {
                     c.Args.Add(arg);
                 }
-            })
-            .WithDebugger();
+            });
+
+        if (Debugger.IsAttached)
+        {
+            site.WithDebugger();
+        }
+
+        return site;
     }
 
     /// <summary>
@@ -568,7 +575,7 @@ public static class IISExpressEntensions
         resourceName ??= appName;
         var resource = new IISExpressProjectResource(resourceName, iisExpress, projectPath, actualBitness);
 
-        return builder.AddResource(resource)
+        var project = builder.AddResource(resource)
             .WithAnnotation(app)
             .WithAnnotation(new SiteArgumentAnnotation(appName))
             .WithArgs(c =>
@@ -579,8 +586,14 @@ public static class IISExpressEntensions
                     }
                 })
             .WithOtlpExporter()
-            .ExcludeFromManifest()
-            .WithDebugger();
+            .ExcludeFromManifest();
+
+        if (Debugger.IsAttached)
+        {
+            project.WithDebugger();
+        }
+
+        return project;
     }
 
     /// <summary>
