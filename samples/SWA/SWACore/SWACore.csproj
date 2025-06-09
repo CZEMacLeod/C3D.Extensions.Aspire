@@ -7,6 +7,8 @@
     <UserSecretsId>5e8d7811-5df7-4573-8dcd-e8d43e7c3e95</UserSecretsId>
     <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
     <DockerfileContext>..\..\..</DockerfileContext>
+    <ContainerRuntimeIdentifier>win10-x64</ContainerRuntimeIdentifier>
+    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:9.0-nanoserver-1809</ContainerBaseImage>
   </PropertyGroup>
 
   <ItemGroup Label="HealthChecks">

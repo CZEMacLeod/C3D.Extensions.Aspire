@@ -1,6 +1,4 @@
-﻿using C3D.Extensions.Aspire.IISExpress.Resources;
-
-namespace AspireAppHostSWA;
+﻿namespace AspireAppHostSWA;
 
 //This was copied from https://github.com/davidfowl/aspire-ai-chat-demo/blob/main/AIChat.AppHost/DashboardExtensions.cs
 public static class DashboardExtensions
@@ -10,7 +8,7 @@ public static class DashboardExtensions
         if (builder.ExecutionContext.IsPublishMode)
         {
             // The name aspire-dashboard is special cased and excluded from the default
-            var dashboard = builder.AddContainer("dashboard", "mcr.microsoft.com/dotnet/nightly/aspire-dashboard")
+            var dashboard = builder.AddContainer("dashboard", "mcr.microsoft.com/dotnet/nightly/aspire-dashboard", "9.3.0-amd64")
                    .WithHttpEndpoint(targetPort: 18888)
                    .WithHttpEndpoint(name: "otlp", targetPort: 18889)
                    .PublishAsDockerComposeService((_, service) =>
@@ -32,20 +30,23 @@ public static class DashboardExtensions
 
                     builder.CreateResourceBuilder(r).WithEnvironment(c =>
                     {
-                        switch (r)
+                        string protocol = "grpc";
+                        if (r.TryGetLastAnnotation<OtlpProtocolAnnotation>(out var protocolAnnotation))
                         {
-                            case IISExpressProjectResource or
-                                 IISExpressSiteResource:
+                            protocol = protocolAnnotation.Protocol;
+                        }
+                        switch (protocol)
+                        {
+                            case "http/protobuf":
                                 // IIS Express resources use the http endpoint for telemetry
                                 c.EnvironmentVariables["OTEL_EXPORTER_OTLP_ENDPOINT"] = dashboard.GetEndpoint("http");
-                                c.EnvironmentVariables["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http/protobuf";
                                 break;
                             default:
                                 // Set the OTLP endpoint to the dashboard's OTLP endpoint
                                 c.EnvironmentVariables["OTEL_EXPORTER_OTLP_ENDPOINT"] = dashboard.GetEndpoint("otlp");
-                                c.EnvironmentVariables["OTEL_EXPORTER_OTLP_PROTOCOL"] = "grpc";
                                 break;
                         }
+                        c.EnvironmentVariables["OTEL_EXPORTER_OTLP_PROTOCOL"] = protocol;
                         c.EnvironmentVariables["OTEL_SERVICE_NAME"] = r.Name;
                     });
                 }
@@ -53,5 +54,19 @@ public static class DashboardExtensions
                 return Task.CompletedTask;
             });
         }
+    }
+
+    public static IResourceBuilder<T> WithOtlpProtocol<T>(this IResourceBuilder<T> builder, string protocol) where T : IResource
+    {
+        ArgumentNullException.ThrowIfNullOrEmpty(protocol);
+
+        return builder.WithAnnotation(new OtlpProtocolAnnotation(protocol));
+    }
+
+    private class OtlpProtocolAnnotation : IResourceAnnotation
+    {
+        public OtlpProtocolAnnotation(string protocol) => Protocol = protocol;
+
+        public string Protocol { get; }
     }
 }

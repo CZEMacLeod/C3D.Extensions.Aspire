@@ -28,6 +28,18 @@
         "DOTNET_DASHBOARD_OTLP_ENDPOINT_URL": "http://localhost:19118",
         "DOTNET_RESOURCE_SERVICE_ENDPOINT_URL": "http://localhost:20274"
       }
+    },
+    "publish": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "commandLineArgs": "--operation publish --publisher default --output-path S:\\source\\github\\CZEMacLeod\\C3D.Extensions.Aspire.IISExpress\\samples\\SWA\\infra",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ENVIRONMENT": "Development",
+        "DOTNET_DASHBOARD_OTLP_ENDPOINT_URL": "http://localhost:19118",
+        "DOTNET_RESOURCE_SERVICE_ENDPOINT_URL": "http://localhost:20274"
+      }
     }
   }
 }
