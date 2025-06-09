@@ -1,14 +1,31 @@
-using Aspire.Hosting;
-using Microsoft.Extensions.Hosting;
-
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions()
 {
     Args = args,
     AllowUnsecuredTransport = true
 });
 
+var env = builder
+    .AddDockerComposeEnvironment("swa-env")
+    .ConfigureComposeFile(configure =>
+    {
+        configure.AddService(new()
+        {
+            Name = "sql",
+            Image = "mcr.microsoft.com/mssql/server:2022-latest",
+            Environment =
+            {
+                {"ACCEPT_EULA", "Y" },
+                {"SA_PASSWORD", "YourStrong@Passw0rd"}
+            },
+            Ports = { "1433:1433" },
+            Restart = "always"
+        });
+    });
+
 //var framework = builder.AddIISExpress("iis")
 //    .AddSiteProject<Projects.SWAFramework>("framework")
+
+#pragma warning disable ASPIRECOMPUTE001
 
 var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
     //.WithConfigLocation("test.config")  // use a custom config file - will be created if it doesn't exist
@@ -28,6 +45,7 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
     {
         u.DisplayText = "Framework (http)";
         u.DisplayOrder = 12;
+        u.DisplayLocation = UrlDisplayLocation.DetailsOnly;
     })
     .WithUrlForEndpoint("https", u =>
     {
@@ -44,14 +62,16 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
                 {
                     Url = new UriBuilder(ep.AllocatedEndpoint!.UriString) { Path = "debug" }.ToString(),
                     DisplayText = $"Debugger ({ep.Name})",
-                    DisplayOrder = 11 + (ep.Name == "https" ? 10 : 0)
+                    DisplayOrder = 11 + (ep.Name == "https" ? 10 : 0),
+                    DisplayLocation = ep.Name == "https" ? UrlDisplayLocation.SummaryAndDetails : UrlDisplayLocation.DetailsOnly
                 }
                 );
                 u.Urls.Add(new()
                 {
                     Url = new UriBuilder(ep.AllocatedEndpoint!.UriString) { Path = "framework" }.ToString(),
                     DisplayText = $"Framework Session ({ep.Name})",
-                    DisplayOrder = 10 + (ep.Name == "https" ? 10 : 0)
+                    DisplayOrder = 10 + (ep.Name == "https" ? 10 : 0),
+                    DisplayLocation = ep.Name == "https" ? UrlDisplayLocation.SummaryAndDetails : UrlDisplayLocation.DetailsOnly
                 }
                 );
             }
@@ -63,15 +83,23 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
                          .WithDefaultIISExpressEndpoints()
                    //,r => r.WithTemporaryConfig()
                    )
+    .WhenPublishMode(r => r.WithDefaultIISExpressEndpoints(80, 443, false))
+    .WithComputeEnvironment(env)
+    .PublishAsDockerComposeService((_, service) =>
+    {
+        service.Restart = "always";
+    })
     ;
+;
 
 var core = builder.AddProject<Projects.SWACore>("core")
     //.WithSystemWebAdapters(framework)   // Use this __or__ the AddSystemWebAdapters method below
-    .WithHttpsHealthCheck("/alive")
+    .WithHttpHealthCheck("/alive", endpointName: "https")
     .WithUrlForEndpoint("http", u =>
     {
         u.DisplayText = "Core (http)";
         u.DisplayOrder = 12;
+        u.DisplayLocation = UrlDisplayLocation.DetailsOnly;
     })
     .WithUrlForEndpoint("https", u =>
     {
@@ -88,20 +116,29 @@ var core = builder.AddProject<Projects.SWACore>("core")
                 {
                     Url = new UriBuilder(ep.AllocatedEndpoint!.UriString) { Path = "core" }.ToString(),
                     DisplayText = $"Core Session ({ep.Name})",
-                    DisplayOrder = 11 + (ep.Name == "https" ? 10 : 0)
+                    DisplayOrder = 11 + (ep.Name == "https" ? 10 : 0),
+                    DisplayLocation = ep.Name == "https" ? UrlDisplayLocation.SummaryAndDetails : UrlDisplayLocation.DetailsOnly
                 }
                 );
                 u.Urls.Add(new()
                 {
                     Url = new UriBuilder(ep.AllocatedEndpoint!.UriString) { Path = "framework" }.ToString(),
                     DisplayText = $"Framework Session ({ep.Name})",
-                    DisplayOrder = 10 + (ep.Name == "https" ? 10 : 0)
+                    DisplayOrder = 10 + (ep.Name == "https" ? 10 : 0),
+                    DisplayLocation = ep.Name == "https" ? UrlDisplayLocation.SummaryAndDetails : UrlDisplayLocation.DetailsOnly
                 }
                 );
             }
         }
     })
-    .WithUrl("Framework", "Framework Session");
+    .WithUrl("Framework", "Framework Session")
+    .WithComputeEnvironment(env)
+    .PublishAsDockerFile()
+    .PublishAsDockerComposeService((_, service) =>
+    {
+        service.Restart = "always";
+    })
+    ;
 
 // New way to do SystemWebAdapters instead of WithSystemWebAdapters.
 var swa = builder
