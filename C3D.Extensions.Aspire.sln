@@ -20,6 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{E1FFCD98
 		build\nuget.publish.config = build\nuget.publish.config
 		README.md = README.md
 		build\RemoveCert.ps1 = build\RemoveCert.ps1
+		Set-WebApplicationTargetsPath.ps1 = Set-WebApplicationTargetsPath.ps1
 		build\Test.snk = build\Test.snk
 	EndProjectSection
 EndProject
