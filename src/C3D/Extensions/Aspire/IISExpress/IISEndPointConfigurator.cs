@@ -28,7 +28,7 @@ internal class IISEndPointConfigurator
 
     public void Configure()
     {
-        var appHostConfig = options.Value.ApplicationHostConfig!;
+        var appHostConfig = options.Value.ApplicationHostConfig ?? ApplicationHostConfigurationExtensions.GetTempConfigFile();
         foreach (var project in appModel.Resources.OfType<IISExpressProjectResource>())
         {
             try

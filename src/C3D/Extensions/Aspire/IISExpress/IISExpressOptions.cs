@@ -89,7 +89,12 @@ public class IISExpressOptions : IValidatableObject
         return results;
     }
 
-    public string? ApplicationHostConfig => SolutionDir is null || SolutionName is null ? null :
+    public string? ApplicationHostConfig => 
+        (string.IsNullOrEmpty(SolutionDir) || 
+            (string.IsNullOrEmpty(SolutionName) ||
+                SolutionName.IndexOfAny(Path.GetInvalidFileNameChars())!=-1
+            )
+        ) ? null :
         System.IO.Path.Combine(
             SolutionDir,
             ".vs",
