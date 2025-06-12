@@ -2,7 +2,7 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
-    <PackageOutputPath Condition="$(PackageOutputDir) == ''">$(MSBuildThisFileDirectory)..\nuget</PackageOutputPath>
+    <PackageOutputPath Condition="$(PackageOutputDir) == ''">$(MSBuildThisFileDirectory)..\..\..\nuget</PackageOutputPath>
   </PropertyGroup>
 
   <PropertyGroup>
