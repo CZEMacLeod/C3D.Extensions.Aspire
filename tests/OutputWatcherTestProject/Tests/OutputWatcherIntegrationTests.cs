@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Xunit.Abstractions;
 
 namespace OutputWatcherTestProject.Tests;
@@ -7,6 +9,7 @@ namespace OutputWatcherTestProject.Tests;
 public class OutputWatcherIntegrationTests(ITestOutputHelper outputHelper)
 {
     private void WriteFunctionName([CallerMemberName] string? caller = null) => outputHelper.WriteLine(caller);
+    private const int WaitForHealthyTimeoutSeconds = 90;
     private static readonly TimeSpan WaitForHealthyTimeout = TimeSpan.FromSeconds(90);
 
     private async Task<IDistributedApplicationTestingBuilder> CreateAppHostAsync()
@@ -18,6 +21,7 @@ public class OutputWatcherIntegrationTests(ITestOutputHelper outputHelper)
         var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.AspireAppHostWaitForConsole>([], (dab, host) =>
         {
             dab.EnableResourceLogging = true;
+            host.Configuration!.AddUserSecrets<OutputWatcherIntegrationTests>();
         });
         appHost
             .Services
@@ -30,12 +34,12 @@ public class OutputWatcherIntegrationTests(ITestOutputHelper outputHelper)
 
         appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
         {
-
+            var timeout = TimeSpan.FromSeconds(appHost.Configuration.GetValue<double>("HttpClientTimeout", 30));
             clientBuilder
                 .AddStandardResilienceHandler(res => {
-                    res.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(120);
-                    res.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(60);
-                    res.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+                    res.TotalRequestTimeout.Timeout = timeout * 4;
+                    res.CircuitBreaker.SamplingDuration = timeout * 2;
+                    res.AttemptTimeout.Timeout = timeout;
                 });
             clientBuilder
                     .ConfigurePrimaryHttpMessageHandler(() =>
