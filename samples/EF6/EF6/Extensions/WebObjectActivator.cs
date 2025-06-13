@@ -22,7 +22,7 @@ public class WebObjectActivator : IServiceProvider
         }
         if (serviceType == typeof(IKeyedServiceProvider))
         {
-            return serviceType as IKeyedServiceProvider ?? serviceProvider.GetService(serviceType);
+            return serviceProvider as IKeyedServiceProvider ?? serviceProvider.GetService(serviceType);
         }
         return serviceProvider.GetService(serviceType) ??
         Activator.CreateInstance(serviceType, flag, null, null, null);

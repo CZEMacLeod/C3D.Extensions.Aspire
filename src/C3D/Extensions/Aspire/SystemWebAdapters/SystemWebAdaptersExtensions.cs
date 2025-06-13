@@ -2,6 +2,7 @@
 using Aspire.Hosting.Publishing;
 using C3D.Extensions.Aspire.IISExpress.Annotations;
 using C3D.Extensions.Aspire.IISExpress.Resources;
+using C3D.Extensions.Aspire.SystemWebAdapters.Resources;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics.CodeAnalysis;

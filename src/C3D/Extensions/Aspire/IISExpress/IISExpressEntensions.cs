@@ -385,10 +385,10 @@ public static class IISExpressEntensions
 
         builder.Services.AddSingleton<CommandExecutor>();
 
-        if (builder.Environment.IsDevelopment() && builder.ExecutionContext.IsRunMode)
-        {
-            builder.Services.AddAttachDebuggerHook();
-        }
+        //if (builder.Environment.IsDevelopment() && builder.ExecutionContext.IsRunMode)
+        //{
+        //    builder.Services.AddAttachDebuggerHook();
+        //}
 
         builder.Eventing.Subscribe<BeforeStartEvent>((@event, token) =>
         {
@@ -572,10 +572,10 @@ public static class IISExpressEntensions
             return Task.CompletedTask;
         });
 
-        if (builder.ExecutionContext.IsRunMode && builder.Environment.IsDevelopment())
-        {
-            builder.Services.AddAttachDebuggerHook();
-        }
+        //if (builder.ExecutionContext.IsRunMode && builder.Environment.IsDevelopment())
+        //{
+        //    builder.Services.AddAttachDebuggerHook();
+        //}
 
         return builder;
     }

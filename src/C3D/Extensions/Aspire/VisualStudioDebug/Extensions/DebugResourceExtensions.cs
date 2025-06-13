@@ -12,6 +12,7 @@ public static class DebugResourceBuilderExtensions
     public static bool IsDebugMode<TResource>(this IResourceBuilder<TResource> resourceBuilder, params string[]? environments)
         where TResource : IResource =>
             (resourceBuilder as IDebugBuilder<TResource>)?.IsDebugMode ?? (
+            System.Diagnostics.Debugger.IsAttached &&
             resourceBuilder.ApplicationBuilder.ExecutionContext.IsRunMode &&
             ((environments is null || environments.Length == 0) ?
                 resourceBuilder.ApplicationBuilder.Environment.IsDevelopment() :
