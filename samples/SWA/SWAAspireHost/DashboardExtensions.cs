@@ -60,7 +60,7 @@ public static class DashboardExtensions
     {
         ArgumentNullException.ThrowIfNullOrEmpty(protocol);
 
-        return builder.WithAnnotation(new OtlpProtocolAnnotation(protocol));
+        return builder.WithAnnotation(new OtlpProtocolAnnotation(protocol), ResourceAnnotationMutationBehavior.Replace);
     }
 
     private class OtlpProtocolAnnotation : IResourceAnnotation
