@@ -3,7 +3,10 @@
 [![Build Status](https://dev.azure.com/flexviews/OSS.Build/_apis/build/status%2FCZEMacLeod.C3D.Extensions.Aspire?branchName=main)](https://dev.azure.com/flexviews/OSS.Build/_build/latest?definitionId=88&branchName=main)
 [![Build and Run IIS Express Tests](https://github.com/CZEMacLeod/C3D.Extensions.Aspire/actions/workflows/dotnet-msbuild-vstest.yml/badge.svg)](https://github.com/CZEMacLeod/C3D.Extensions.Aspire/actions/workflows/dotnet-msbuild-vstest.yml)
 
-A set of packages to make it easier to work with IIS Express / System.Web projects, and extend debugging in Aspire.
+A set of packages to make it easier to work with Aspire.
+Specific packages enable working with IIS Express / System.Web projects.
+Others extend debugging in Aspire.
+Please see the individual package readmes for more information.
 
 # AppHost Packages
 
@@ -27,7 +30,7 @@ A set of packages to make it easier to work with IIS Express / System.Web projec
 [![NuGet package](https://img.shields.io/nuget/v/C3D.Extensions.Aspire.Fluent.svg)](https://nuget.org/packages/C3D.Extensions.Aspire.Fluent)
 [![NuGet downloads](https://img.shields.io/nuget/dt/C3D.Extensions.Aspire.Fluent.svg)](https://nuget.org/packages/C3D.Extensions.Aspire.Fluent)
 
-## [C3D.Extensions.Aspire.Fluent](src/C3D/Extensions/Aspire/SystemWebAdapters/README.md)
+## [C3D.Extensions.Aspire.SystemWebAdapters](src/C3D/Extensions/Aspire/SystemWebAdapters/README.md)
 [![NuGet package](https://img.shields.io/nuget/v/C3D.Extensions.Aspire.SystemWebAdapters.svg)](https://nuget.org/packages/C3D.Extensions.SystemWebAdapters.Fluent)
 [![NuGet downloads](https://img.shields.io/nuget/dt/C3D.Extensions.Aspire.SystemWebAdapters.svg)](https://nuget.org/packages/C3D.Extensions.SystemWebAdapters.Fluent)
 
