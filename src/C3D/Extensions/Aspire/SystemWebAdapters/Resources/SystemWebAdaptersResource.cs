@@ -1,6 +1,6 @@
 ﻿using Aspire.Hosting.ApplicationModel;
 
-namespace C3D.Extensions.Aspire.IISExpress.Resources;
+namespace C3D.Extensions.Aspire.SystemWebAdapters.Resources;
 
 /// <summary>
 /// Represents a systemweb-adapters resource. This is a special resource that is used to contain the shared key used by systemweb-adapters.
