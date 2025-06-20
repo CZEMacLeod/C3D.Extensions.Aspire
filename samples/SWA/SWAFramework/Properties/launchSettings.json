@@ -9,6 +9,7 @@
   },
   "profiles": {
     "IIS Express": {
+      "use64Bit": true,
       "commandName": "IISExpress",
       "launchBrowser": true,
       "environmentVariables": {
