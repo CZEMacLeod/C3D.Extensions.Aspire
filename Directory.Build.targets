@@ -46,6 +46,39 @@
     <Message Text="Package Description: $(PackageDescription)" Importance="high" />
   </Target>
 
+  <UsingTask TaskName="DetectProjectReferenceToProjectToBuild"
+             TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" >
+    <ParameterGroup>
+      <ProjectReference ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <ProjectToBuild ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <ProjectReferenceFound ParameterType="System.Boolean" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <!--<Using Namespace="System.Linq" />-->
+      <Code Type="Fragment" Language="cs">
+        ProjectReferenceFound = false;
+        foreach(var pr in ProjectReference)
+        {
+        Log.LogMessage(MessageImportance.Low, "Project Reference: {0}", pr.ItemSpec);
+        foreach(var ptb in ProjectToBuild)
+        {
+        Log.LogMessage(MessageImportance.Low, "Project To Build: {0}", ptb.ItemSpec);
+        if (pr.GetMetadata("Filename").Equals(ptb.ItemSpec, StringComparison.OrdinalIgnoreCase))
+        {
+        Log.LogMessage(MessageImportance.High, "Found matching project reference: {0} {1}", pr.ItemSpec, ptb.ItemSpec);
+        ProjectReferenceFound = true;
+        foreach(string metadataName in pr.MetadataNames)
+        {
+        Log.LogMessage(MessageImportance.High, "Metadata: {0} = {1}", metadataName, pr.GetMetadata(metadataName));
+        }
+        }
+        }
+        }
+      </Code>
+    </Task>
+  </UsingTask>
+
   <Target Name="PackIfChanged">
     <ItemGroup>
       <_Temporary Remove="@(_Temporary)" />
@@ -84,13 +117,21 @@
     <Message Importance="high" Text="CommitIDFound: $(CommitIDFound)" />
     <ItemGroup>
       <_Temporary Remove="@(_Temporary)" />
-      <_Temporary Include="$(ProjectToBuild)" />
+      <_Temporary Include="$(ProjectToBuild)" Condition="'$(ProjectToBuild)'!=''" />
     </ItemGroup>
     <Message Importance="high" Text="Projects To Build: %(_Temporary.Identity)" />
+    <DetectProjectReferenceToProjectToBuild Condition="'$(ProjectToBuild)'!=''"
+                                           ProjectReference="@(ProjectReference)"
+                                           ProjectToBuild="@(_Temporary)">
+      <Output TaskParameter="ProjectReferenceFound" PropertyName="ProjectReferenceFound" />
+    </DetectProjectReferenceToProjectToBuild>
+    <Message Importance="high" Text="Project Reference Found to Build: $(ProjectReferenceFound)" />
     <PropertyGroup>
       <BuildProject>$(CommitIDFound)</BuildProject>
-      <BuildProject Condition="'$(MSBuildProjectName)'=='%(_Temporary.Identity)'">true</BuildProject>
+      <BuildProject Condition="'$(ProjectToBuild)'!='' and '$(MSBuildProjectName)'=='%(_Temporary.Identity)'">true</BuildProject>
+      <BuildProject Condition="'$(ProjectToBuild)'!='' and $(ProjectReferenceFound)">true</BuildProject>
     </PropertyGroup>
+
     <Message Importance="high" Text="BuildProject: $(BuildProject)" />
 
     <ItemGroup>

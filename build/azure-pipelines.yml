@@ -25,9 +25,9 @@ parameters:
     displayName: Build Commit IDs
     default: ' '
   - name: project_to_build
-    type: string
+    type: stringList
     displayName: Project To Build
-    default: ' '
+    default: []
     values:
       - ' '
       - 'C3D.Extensions.Aspire.IISExpress'
@@ -70,7 +70,7 @@ variables:
 - name: 'git_commit_ids'
   value: ${{ trim(parameters.git_commit_ids) }}
 - name: 'project_to_build'
-  value: ${{ parameters.project_to_build }}
+  value: ${{ join(';',parameters.project_to_build) }}
 - name: 'target'
   value: 'PackIfChanged'
 - name: 'nuget_version'
