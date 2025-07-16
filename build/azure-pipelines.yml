@@ -29,7 +29,7 @@ parameters:
     displayName: Project To Build
     default: []
     values:
-      - ' '
+      - 'C3D.Extensions.Aspire.Fluent'
       - 'C3D.Extensions.Aspire.IISExpress'
       - 'C3D.Extensions.Aspire.VisualStudioDebug'
       - 'C3D.Extensions.Aspire.OutputWatcher'
