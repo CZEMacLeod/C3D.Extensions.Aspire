@@ -460,7 +460,7 @@ public static class IISExpressEntensions
             .WithParentRelationship(builder)
             .WithAnnotation(new SiteArgumentAnnotation(name))
             .WithAnnotation(new ConfigArgumentAnnotation(builder.Resource.GetConfigurationPath()))
-            .RegisterProjectDetails(project)
+            .WithIISLaunchDetails(project.GetLaunchDetails())
             .WithArgs(c =>
             {
                 foreach (var arg in resource.Annotations.OfType<IISExpressArgumentAnnotation>())
@@ -584,6 +584,7 @@ public static class IISExpressEntensions
         builder.AddIISExpressConfiguration();
 
         var app = new T();
+        var metadata = app.GetLaunchDetails();
 
         var appName = app.GetType().Name;
         var projectPath = System.IO.Path.GetDirectoryName(app.ProjectPath)!;
@@ -595,6 +596,7 @@ public static class IISExpressEntensions
 
         return builder.AddResource(resource)
             .WithAnnotation(app)
+            .WithIISLaunchDetails(metadata)
             .WithAnnotation(new SiteArgumentAnnotation(appName))
             .WithArgs(c =>
                 {
