@@ -3,6 +3,7 @@
     <IsTestProject>false</IsTestProject>
     <SolutionDir Condition="'$(SolutionDir)'==''">$(MSBuildThisFileDirectory)</SolutionDir>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <NoWarn>$(NoWarn);NETSDK1233</NoWarn>
   </PropertyGroup>
 
   <!--<PropertyGroup>

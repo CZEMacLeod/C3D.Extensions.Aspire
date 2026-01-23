@@ -69,17 +69,15 @@ jobs:
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
-      run: dotnet msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true
+      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true /p:AfterMicrosoftNETSdkTargets=$(SolutionDir)\build\vs-workaround.targets
       env:
         Configuration: ${{ matrix.configuration }}
-        WebApplicationsTargetPath: ${{ steps.vswhere-paths.outputs.web_applications_target_path }}
 
     # Build the application
     - name: Build the application
-      run: dotnet msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true
+      run: msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true /p:AfterMicrosoftNETSdkTargets=$(SolutionDir)\build\vs-workaround.targets
       env:
         Configuration: ${{ matrix.configuration }}
-        WebApplicationsTargetPath: ${{ steps.vswhere-paths.outputs.web_applications_target_path }}
 
     - name: Run tests
       run: dotnet test --no-restore --no-build --logger "console;verbosity=detailed" --logger "trx;verbosity=normal" --collect:"XPlat Code Coverage" --results-directory "TestResults"
