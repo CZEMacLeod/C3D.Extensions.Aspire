@@ -1,11 +1,11 @@
 {
   "sdk": {
-    "version": "9.0.200",
+    "version": "10.0.100",
     "rollForward": "latestMinor",
     "allowPrerelease": false
   },
   "msbuild-sdks": {
-    "MSBuild.SDK.SystemWeb": "4.0.97",
-    "MSBuild.SDK.SystemWeb.RazorLibrary": "4.0.97"
+    "MSBuild.SDK.SystemWeb": "4.0.106",
+    "MSBuild.SDK.SystemWeb.RazorLibrary": "4.0.106"
   }
 }

@@ -6,6 +6,8 @@ using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
 using C3D.Extensions.SystemWeb.OpenTelemetry.Application;
+using Microsoft.AspNetCore.SystemWebAdapters.Hosting;
+using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Resources;
 
 [assembly: PreApplicationStartMethod(typeof(SWAFramework.MvcApplication), nameof(SWAFramework.MvcApplication.WaitForDebugger))]
@@ -29,19 +31,26 @@ public class MvcApplication : OpenTelemeteryApplication
     {
         base.Application_Start();
 
-        this.AddSystemWebAdapters()
-            .AddProxySupport(options => options.UseForwardedHeaders = true)
-            .AddSessionSerializer(options =>
-            {
-            })
-            .AddJsonSessionSerializer(options =>
-            {
-                options.RegisterKey<int>("CoreCount");
-            })
-            .AddRemoteAppServer(options => options.ApiKey = ConfigurationManager.AppSettings["RemoteApp:ApiKey"])
-            .AddSessionServer(options =>
-            {
-            });
+        HttpApplicationHost.RegisterHost(builder =>
+        {
+            builder
+                .AddSystemWebAdapters()
+                .AddProxySupport(options => options.UseForwardedHeaders = true)
+                .AddSessionSerializer(options =>
+                {
+                })
+                .AddJsonSessionSerializer(options =>
+                {
+                    options.RegisterKey<int>("CoreCount");
+                })
+                .AddRemoteAppServer(options => options.ApiKey = ConfigurationManager.AppSettings["RemoteApp:ApiKey"])
+                .AddSessionServer(options =>
+                {
+                });
+
+            builder.AddDataProtection();
+            builder.AddWebObjectActivator();
+        });
 
         AreaRegistration.RegisterAllAreas();
         GlobalConfiguration.Configure(WebApiConfig.Register);

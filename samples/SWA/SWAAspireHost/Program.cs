@@ -10,6 +10,8 @@ var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOpt
 //var framework = builder.AddIISExpress("iis")
 //    .AddSiteProject<Projects.SWAFramework>("framework")
 
+const string healthCheckEndpointName = "healthcheck-http";
+
 var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
     //.WithConfigLocation("test.config")  // use a custom config file - will be created if it doesn't exist
 
@@ -40,6 +42,8 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
         {
             foreach (var ep in eps)
             {
+                if (ep.Name == healthCheckEndpointName) continue;
+
                 u.Urls.Add(new()
                 {
                     Url = new UriBuilder(ep.AllocatedEndpoint!.UriString) { Path = "debug" }.ToString(),
@@ -57,7 +61,9 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
             }
         }
     })
-    .WhenDebugMode(r => r.WithHttpHealthCheck("/debug", 204)
+    .WhenDebugMode(r => r
+                         .WithHttpEndpoint(name: healthCheckEndpointName)   // This will be added to the config file and saved in a temporary location
+                         .WithHttpHealthCheck("/debug", 204, healthCheckEndpointName)    // Health check requires endpoints to exist beforehand so we need to use 
                          .WithEnvironment("WaitForDebugger", "true"))
     .WhenUnderTest(r => r.WithTemporaryConfig()    // Ensure we use a temp config with random port numbers
                          .WithDefaultIISExpressEndpoints()
@@ -67,7 +73,7 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
 
 var core = builder.AddProject<Projects.SWACore>("core")
     //.WithSystemWebAdapters(framework)   // Use this __or__ the AddSystemWebAdapters method below
-    .WithHttpsHealthCheck("/alive")
+    .WithHttpHealthCheck("/alive")
     .WithUrlForEndpoint("http", u =>
     {
         u.DisplayText = "Core (http)";
