@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0-windows;net9.0-windows</TargetFrameworks>
+    <TargetFrameworks>net8.0-windows;net9.0-windows;net10.0-windows</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyTitle>$(AssemblyTitle) IIS Express</AssemblyTitle>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting" Version="9.2.0" />
+    <PackageReference Include="Aspire.Hosting" Version="13.1.0" />
     <ProjectReference Include="..\VisualStudioDebug\C3D.Extensions.Aspire.VisualStudioDebug.csproj" />
     <None Include="build\*.*" Pack="true" PackagePath="build\%(Filename)%(Extension)" Visible="true" />
   </ItemGroup>

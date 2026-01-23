@@ -5,7 +5,7 @@
     <LangVersion>10.0</LangVersion>
 
     <GeneratedBindingRedirectsAction>Overwrite</GeneratedBindingRedirectsAction>
-    <MicrosoftNetCompilersToolset_Version>4.13.0</MicrosoftNetCompilersToolset_Version>
+    <MicrosoftNetCompilersToolset_Version>5.0.0</MicrosoftNetCompilersToolset_Version>
     <MicrosoftCodeDomProvidersDotNetCompilerPlatform_Version>4.1.0</MicrosoftCodeDomProvidersDotNetCompilerPlatform_Version>
   </PropertyGroup>
 
@@ -31,15 +31,17 @@
     <None Include="Properties\launchSettings.json" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Aspire.Microsoft.AspNetCore.SystemWebAdapters" Version="2.2.1-preview.1.25618.2" />
     <PackageReference Include="Microsoft.Configuration.ConfigurationBuilders.Environment" Version="3.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
     
     <PackageReference Include="routedebugger" Version="2.1.5" />
     
   </ItemGroup>
   <ItemGroup Label="SystemWebAdapters">
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection.SystemWeb" Version="2.3.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SystemWebAdapters.FrameworkServices" Version="2.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.SystemWeb" Version="2.3.9" />
+    <PackageReference Include="Microsoft.AspNetCore.SystemWebAdapters.FrameworkServices" Version="2.2.1" />
+    <PackageReference Include="System.ValueTuple" Version="4.6.1" />
   </ItemGroup>
   <ItemGroup Label="OpenTelemetry">
     <ProjectReference Include="..\..\..\src\C3D\Extensions\SystemWeb\OpenTelemetry\Application\C3D.Extensions.SystemWeb.OpenTelemetry.Application.csproj" />
@@ -54,7 +56,7 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNet" Version="1.11.0-beta.2" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNet.TelemetryHttpModule" Version="1.11.0-beta.2" />-->
     
-    <PackageReference Include="OpenTelemetry.Resources.ProcessRuntime" Version="$(OpenTelemetryBetaVersion)" />
+    <PackageReference Include="OpenTelemetry.Resources.ProcessRuntime" Version="1.15.0-beta.1" />
   </ItemGroup>
   
   <ItemGroup>
@@ -64,7 +66,7 @@
     <PackageReference Include="Microsoft.AspNet.Web.Optimization" Version="1.1.3" />
     <PackageReference Include="Microsoft.AspNet.WebApi" Version="5.3.0" />
     <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="3.0.71" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="WebGrease" Version="1.6.0" />
   </ItemGroup>
   

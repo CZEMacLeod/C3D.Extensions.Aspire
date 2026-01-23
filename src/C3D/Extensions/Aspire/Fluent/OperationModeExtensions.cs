@@ -40,14 +40,6 @@ public static class OperationModeExtensions
             publishMode(resourceBuilder) :
             otherModes?.Invoke(resourceBuilder) ?? resourceBuilder;
 
-    [Experimental("ASPIREPUBLISHERS001")]
-    public static IResourceBuilder<TResource> WhenInspectMode<TResource>(this IResourceBuilder<TResource> resourceBuilder,
-        Func<IResourceBuilder<TResource>, IResourceBuilder<TResource>> inspectMode,
-        Func<IResourceBuilder<TResource>, IResourceBuilder<TResource>>? otherModes)
-        where TResource : IResource => resourceBuilder.ApplicationBuilder.ExecutionContext.IsInspectMode ?
-            inspectMode(resourceBuilder) :
-            otherModes?.Invoke(resourceBuilder) ?? resourceBuilder;
-
     public static IResourceBuilder<TResource>? WhenOperationMode<TResource>(this IDistributedApplicationBuilder builder,
         DistributedApplicationOperation mode,
         Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?> matchedMode,
@@ -81,11 +73,4 @@ public static class OperationModeExtensions
             publishMode(builder) :
             otherModes?.Invoke(builder);
 
-    [Experimental("ASPIREPUBLISHERS001")]
-    public static IResourceBuilder<TResource>? WhenInspectMode<TResource>(this IDistributedApplicationBuilder builder,
-        Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?> inspectMode,
-        Func<IDistributedApplicationBuilder, IResourceBuilder<TResource>?>? otherModes)
-        where TResource : IResource => builder.ExecutionContext.IsInspectMode ?
-            inspectMode(builder) :
-            otherModes?.Invoke(builder);
 }

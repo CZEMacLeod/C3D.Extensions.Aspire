@@ -35,9 +35,14 @@ public static class IISExpressEntensions
                 ?? IISExpressBitnessAnnotation.DefaultBitness;
 
             var port = ep.EnsureValidIISEndpointPort();
-            logger.LogInformation("If your https endpoint does not work, run the following command from an elevated command prompt:\r\n" +
-                "\"{Path}\\iisExpressAdminCmd.exe\" setupSslUrl -url:{Url} -UseSelfSigned",
-                bitness.GetIISExpressPath().dirPath, new UriBuilder(ep.UriScheme, ep.TargetHost, port!).ToString());
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                var path = bitness.GetIISExpressPath().dirPath;
+                var url = new UriBuilder(ep.UriScheme, ep.TargetHost, port!).ToString();
+                logger.LogInformation("If your https endpoint does not work, run the following command from an elevated command prompt:\r\n" +
+                    "\"{Path}\\iisExpressAdminCmd.exe\" setupSslUrl -url:{Url} -UseSelfSigned",
+                    path, url);
+            }
         }
 
         if (httpsEndpoints.Count != 0)
@@ -117,7 +122,10 @@ public static class IISExpressEntensions
                     {
                         var port = ep.EnsureValidIISEndpointPort();
                         var queuedCommand = $"\"{command}\" setupSslUrl -url:{ep.UriScheme}://localhost:{port} -UseSelfSigned";
-                        logger.LogInformation("Queueing command: {Command}", queuedCommand);
+                        if (logger.IsEnabled(LogLevel.Information))
+                        {
+                            logger.LogInformation("Queueing command: {Command}", queuedCommand);
+                        }
                         await bat.WriteLineAsync(queuedCommand);
                     }
                 }
@@ -289,7 +297,10 @@ public static class IISExpressEntensions
             }
         }
 
-        logger.LogDebug("{Site}", JsonSerializer.Serialize(tempSite));
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("{Site}", JsonSerializer.Serialize(tempSite));
+        }
         return tempSite;
     }
 
@@ -325,12 +336,13 @@ public static class IISExpressEntensions
         return resourceBuilder;
     }
 
-    internal static void ShowIISExpressHttpsEndpointInformation<T>(this T resource, IDistributedApplicationEventing eventing, ILogger? logger = null, IISExpressBitness? bitness = null) where T : IResourceWithEndpoints
+    internal static void ShowIISExpressHttpsEndpointInformation<T>(this T resource, IDistributedApplicationEventing eventing, ILogger? logger = null, IISExpressBitness? bitness = null) 
+        where T : IResourceWithEndpoints
     {
-        eventing.Subscribe<AfterEndpointsAllocatedEvent>((e, c) =>
+        eventing.Subscribe<ResourceEndpointsAllocatedEvent>(resource, (e, c) =>
         {
-            logger ??= e.Services.GetRequiredService<ResourceLoggerService>().GetLogger(resource);
-            ShowIISExpressHttpsEndpointInformation(resource, logger, bitness);
+            logger ??= e.Services.GetRequiredService<ResourceLoggerService>().GetLogger(e.Resource);
+            ShowIISExpressHttpsEndpointInformation((IResourceWithEndpoints)e.Resource, logger, bitness);
             return Task.CompletedTask;
         });
     }
@@ -397,26 +409,29 @@ public static class IISExpressEntensions
             return notifications.PublishUpdateAsync(resource, s => s with { State = KnownResourceStates.Starting });
         });
 
-        builder.Eventing.Subscribe<AfterEndpointsAllocatedEvent>((@event, token) =>
+        builder.Eventing.Subscribe<ResourceEndpointsAllocatedEvent>(resource, (@event, token) =>
         {
-            if (!iis.Resource.TryGetLastAnnotation<AppPoolArgumentAnnotation>(out var appPoolAnnotation))
+            var iisResource = (IISExpressResource)@event.Resource;
+            if (!iisResource.TryGetLastAnnotation<AppPoolArgumentAnnotation>(out var appPoolAnnotation))
             {
                 throw new InvalidOperationException("IIS Express must have an AppPool defined");
             }
 
-            var appHostConfig = iis.Resource.GetDefaultConfiguration();
+            var appHostConfig = iisResource.GetDefaultConfiguration();
 
-            var logger = @event.Services.GetRequiredService<ResourceLoggerService>().GetLogger(iis.Resource);
+            var logger = @event.Services.GetRequiredService<ResourceLoggerService>().GetLogger(iisResource);
 
             appHostConfig.SystemApplicationHost.Sites = new()
             {
-                Site = [.. CreateSites(iis.Resource.Sites, appPoolAnnotation.AppPool, logger)]
+                Site = [.. CreateSites(iisResource.Sites, appPoolAnnotation.AppPool, logger)]
             };
 
-            var path = iis.Resource.SaveConfiguration(appHostConfig);
-
+            var path = iisResource.SaveConfiguration(appHostConfig);
+#pragma warning disable IDE0079 // Apprently the CS1873 suppression isn't needed!?
+#pragma warning disable CA1873  // path is always available here and is not 'expensive'
             logger.LogInformation("Saved configuration to '{Path}'", path);
-
+#pragma warning restore CA1873
+#pragma warning restore IDE0079
             var notifications = @event.Services.GetRequiredService<ResourceNotificationService>();
 
             return notifications.PublishUpdateAsync(resource, s => s with { State = KnownResourceStates.Running });
@@ -607,7 +622,7 @@ public static class IISExpressEntensions
                         c.Args.Add(arg);
                     }
                 })
-            .WithOtlpExporter()
+            .WithOtlpExporter(OtlpProtocol.HttpProtobuf)
             .ExcludeFromManifest()
             .WithDebugger();
     }

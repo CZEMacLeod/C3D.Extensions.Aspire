@@ -41,6 +41,7 @@ jobs:
         dotnet-version: |
             8.0.x
             9.0.x
+            10.0.x
 
     # Add MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
     - name: Setup MSBuild.exe
@@ -68,13 +69,13 @@ jobs:
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
-      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true
+      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true '/p:AfterMicrosoftNETSdkTargets=${{ github.workspace }}\build\vs-workaround.targets'
       env:
         Configuration: ${{ matrix.configuration }}
 
     # Build the application
     - name: Build the application
-      run: msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true
+      run: msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:ContinuousIntegrationBuild=true '/p:AfterMicrosoftNETSdkTargets=${{ github.workspace }}\build\vs-workaround.targets'
       env:
         Configuration: ${{ matrix.configuration }}
 

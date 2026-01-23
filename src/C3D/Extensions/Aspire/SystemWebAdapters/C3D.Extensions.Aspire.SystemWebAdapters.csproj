@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0-windows;net9.0-windows</TargetFrameworks>
+    <TargetFrameworks>net8.0-windows;net9.0-windows;net10.0-windows</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyTitle>$(AssemblyTitle) System.Web Adapters</AssemblyTitle>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting" Version="9.2.0" />
+    <PackageReference Include="Aspire.Hosting" Version="13.1.0" />
     <ProjectReference Include="..\IISExpress\C3D.Extensions.Aspire.IISExpress.csproj" />
   </ItemGroup>
 

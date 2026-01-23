@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.10.35122.118
+# Visual Studio Version 18
+VisualStudioVersion = 18.2.11415.280
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{E1FFCD98-26C8-4A07-92A9-4B3F18850527}"
 	ProjectSection(SolutionItems) = preProject
@@ -22,6 +22,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{E1FFCD98
 		build\RemoveCert.ps1 = build\RemoveCert.ps1
 		Set-WebApplicationTargetsPath.ps1 = Set-WebApplicationTargetsPath.ps1
 		build\Test.snk = build\Test.snk
+		build\vs-workaround.targets = build\vs-workaround.targets
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B02941E8-EB9F-4AFF-8383-6B231DD01754}"

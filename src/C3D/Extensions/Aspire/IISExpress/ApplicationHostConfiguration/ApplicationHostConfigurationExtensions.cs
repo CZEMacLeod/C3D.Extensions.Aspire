@@ -3,7 +3,9 @@ using C3D.Extensions.Aspire.IISExpress.Configuration;
 using C3D.Extensions.Aspire.IISExpress.Resources;
 using System.Xml.Serialization;
 
+#pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace C3D.Extensions.Aspire.IISExpress;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 internal static class ApplicationHostConfigurationExtensions
 {
