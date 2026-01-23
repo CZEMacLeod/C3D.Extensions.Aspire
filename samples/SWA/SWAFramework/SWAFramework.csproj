@@ -41,6 +41,7 @@
   <ItemGroup Label="SystemWebAdapters">
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.SystemWeb" Version="2.3.9" />
     <PackageReference Include="Microsoft.AspNetCore.SystemWebAdapters.FrameworkServices" Version="2.2.1" />
+    <PackageReference Include="System.ValueTuple" Version="4.6.1" />
   </ItemGroup>
   <ItemGroup Label="OpenTelemetry">
     <ProjectReference Include="..\..\..\src\C3D\Extensions\SystemWeb\OpenTelemetry\Application\C3D.Extensions.SystemWeb.OpenTelemetry.Application.csproj" />
