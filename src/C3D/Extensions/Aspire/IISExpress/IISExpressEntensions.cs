@@ -5,7 +5,6 @@ using C3D.Extensions.Aspire.IISExpress.Annotations;
 using C3D.Extensions.Aspire.IISExpress.Configuration;
 using C3D.Extensions.Aspire.IISExpress.Resources;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Collections;
 using System.Net.NetworkInformation;
@@ -393,14 +392,10 @@ public static class IISExpressEntensions
         var (actualBitness, path) = bitness.GetIISExpressExe();
         var resource = new IISExpressResource(name, path, actualBitness);
         var iis = builder.AddResource(resource)
-            .WithAnnotation(new AppPoolArgumentAnnotation(AppPoolArgumentAnnotation.DefaultAppPool));
+            .WithAnnotation(new AppPoolArgumentAnnotation(AppPoolArgumentAnnotation.DefaultAppPool))
+            .ExcludeFromManifest();
 
         builder.Services.AddSingleton<CommandExecutor>();
-
-        //if (builder.Environment.IsDevelopment() && builder.ExecutionContext.IsRunMode)
-        //{
-        //    builder.Services.AddAttachDebuggerHook();
-        //}
 
         builder.Eventing.Subscribe<BeforeStartEvent>((@event, token) =>
         {
@@ -478,9 +473,9 @@ public static class IISExpressEntensions
 
         return builder.ApplicationBuilder.AddResource(resource)
             .WithParentRelationship(builder)
-            .WithAnnotation(project)
             .WithAnnotation(new SiteArgumentAnnotation(name))
             .WithAnnotation(new ConfigArgumentAnnotation(builder.Resource.GetConfigurationPath()))
+            .WithIISLaunchDetails(project.GetLaunchDetails())
             .WithArgs(c =>
             {
                 foreach (var arg in resource.Annotations.OfType<IISExpressArgumentAnnotation>())
@@ -488,6 +483,7 @@ public static class IISExpressEntensions
                     c.Args.Add(arg);
                 }
             })
+            .WithOtlpExporter()
             .WithDebugger();
     }
 
@@ -603,6 +599,7 @@ public static class IISExpressEntensions
         builder.AddIISExpressConfiguration();
 
         var app = new T();
+        var metadata = app.GetLaunchDetails();
 
         var appName = app.GetType().Name;
         var projectPath = System.IO.Path.GetDirectoryName(app.ProjectPath)!;
@@ -614,6 +611,7 @@ public static class IISExpressEntensions
 
         return builder.AddResource(resource)
             .WithAnnotation(app)
+            .WithIISLaunchDetails(metadata)
             .WithAnnotation(new SiteArgumentAnnotation(appName))
             .WithArgs(c =>
                 {
