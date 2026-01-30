@@ -4,8 +4,9 @@ using C3D.Extensions.Aspire.IISExpress;
 using C3D.Extensions.Aspire.IISExpress.Annotations;
 using C3D.Extensions.Aspire.IISExpress.Configuration;
 using C3D.Extensions.Aspire.IISExpress.Resources;
+using C3D.Extensions.Networking;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using System.Collections;
 using System.Net.NetworkInformation;
@@ -17,7 +18,7 @@ namespace Aspire.Hosting;
 
 public static class IISExpressEntensions
 {
-    private static void ShowIISExpressHttpsEndpointInformation<T>(this T resource, ILogger logger, IISExpressBitness? bitness = null)
+    private static void ShowIISExpressHttpsEndpointInformation<T>(this T resource, ILogger logger, C3D.Extensions.Networking.PortAllocator portAllocator, IISExpressBitness? bitness = null)
         where T : IResourceWithEndpoints
     {
         if (!resource.TryGetEndpoints(out var endpoints) || !endpoints.Any())
@@ -34,7 +35,7 @@ public static class IISExpressEntensions
                 ? bitnessAnnotations.Bitness : (resource as IISExpressSiteResource)?.IISExpress.Bitness)
                 ?? IISExpressBitnessAnnotation.DefaultBitness;
 
-            var port = ep.EnsureValidIISEndpointPort();
+            var port = ep.EnsureValidIISEndpointPort(portAllocator);
             if (logger.IsEnabled(LogLevel.Information))
             {
                 var path = bitness.GetIISExpressPath().dirPath;
@@ -94,12 +95,13 @@ public static class IISExpressEntensions
     {
         var cmd = execute.ServiceProvider.GetRequiredService<CommandExecutor>();
         var logger = execute.ServiceProvider.GetRequiredService<ResourceLoggerService>().GetLogger(execute.ResourceName);
+        var portAllocator = execute.ServiceProvider.GetRequiredService<C3D.Extensions.Networking.PortAllocator>();
 
         var command = System.IO.Path.Combine(bitness.GetIISExpressPath().dirPath, "iisExpressAdminCmd.exe");
         if (httpsEndpoints.Count == 1)
         {
             var ep = httpsEndpoints[0];
-            var port = ep.EnsureValidIISEndpointPort();
+            var port = ep.EnsureValidIISEndpointPort(portAllocator);
             var exitCode = await cmd.ExecuteAdminCommandAsync(command, logger, "setupSslUrl",
                 $"-url:{ep.UriScheme}://localhost:{port}",
                 "-UseSelfSigned"
@@ -120,7 +122,7 @@ public static class IISExpressEntensions
                     bat.WriteLine("@echo off");
                     foreach (var ep in httpsEndpoints)
                     {
-                        var port = ep.EnsureValidIISEndpointPort();
+                        var port = ep.EnsureValidIISEndpointPort(portAllocator);
                         var queuedCommand = $"\"{command}\" setupSslUrl -url:{ep.UriScheme}://localhost:{port} -UseSelfSigned";
                         if (logger.IsEnabled(LogLevel.Information))
                         {
@@ -147,111 +149,27 @@ public static class IISExpressEntensions
         return new ExecuteCommandResult() { Success = true };
     }
 
-    internal static T EnsureValidIISEndpoints<T>(this T resource)
+    internal static T EnsureValidIISEndpoints<T>(this T resource, C3D.Extensions.Networking.PortAllocator portAllocator)
         where T : IResourceWithEndpoints
     {
         foreach (var ep in resource.Annotations.OfType<EndpointAnnotation>())
         {
-            ep.EnsureValidIISEndpointPort();
+            ep.EnsureValidIISEndpointPort(portAllocator);
         }
         return resource;
     }
 
-    #region PortAllocator
-
-    // TODO: Move this to a separate class and make it a singleton and/or accessible from DI
-    // This should really be part of a 'built in' port allocator service and used by the aspire host etc.
-    private static readonly int[] avoidPorts = [
-        5060, 5061,
-        6000,
-        6566,
-        6665, 6666, 6667, 6668, 6669,
-        6697, 10080 ];
-
-    private static BitArray? allocatedPorts;
-    private static BitArray AllocatedPorts
-    {
-        get
-        {
-            if (allocatedPorts is null)
-            {
-                allocatedPorts = new BitArray(65536);
-                foreach (var avoidPort in avoidPorts)
-                {
-                    allocatedPorts[avoidPort] = true;
-                }
-
-                try
-                {
-                    IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
-                    TcpConnectionInformation[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpConnections();
-
-                    foreach (TcpConnectionInformation tcpi in tcpConnInfoArray)
-                    {
-                        allocatedPorts[tcpi.LocalEndPoint.Port] = true;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    {
-                        // Log the exception
-                        System.Diagnostics.Debug.WriteLine($"Error while checking allocated ports: {ex.Message}");
-                    }
-                }
-            }
-            return allocatedPorts;
-        }
-    }
-
-    public static void MarkPortAsUsed(int port)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(port, 1, nameof(port));
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(port, 65535, nameof(port));
-        var ap = AllocatedPorts;
-        if (ap[port])
-        {
-            throw new InvalidOperationException($"Port {port} is already allocated");
-        }
-        ap[port] = true;
-    }
-
-    public static bool TryMarkPortAsUsed(int port)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(port, 1, nameof(port));
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(port, 65535, nameof(port));
-        var ap = AllocatedPorts;
-        if (ap[port])
-        {
-            return false; // Port is already allocated
-        }
-        ap[port] = true;
-        return true; // Successfully marked the port as used
-    }
-
-    public static int GetRandomFreePort(int minPort, int maxPort)
-    {
-        var ap = AllocatedPorts;
-        int port;
-        do
-        {
-            port = Random.Shared.Next(minPort, maxPort);
-        } while (ap[port]);
-        ap[port] = true;
-        return port;
-    }
-    #endregion
-
-    private static int EnsureValidIISEndpointPort(this EndpointAnnotation endpoint)
+    private static int EnsureValidIISEndpointPort(this EndpointAnnotation endpoint, C3D.Extensions.Networking.PortAllocator portAllocator)
     {
         var port = endpoint.TargetPort ?? endpoint.AllocatedEndpoint?.Port;
         if (port is null)
         {
             port = endpoint.UriScheme switch
             {
-                "http" => GetRandomFreePort(5000, 10000),  // There are certain ports that browsers will object to that should be avoided.
-                                                           // See https://github.com/CZEMacLeod/C3D.Extensions.Playwright.AspNetCore/blob/6d3b92790df905cd44587c983c2b89546a856ee3/src/C3D/Extensions/Playwright/AspNetCore/Factory/PlaywrightWebApplicationFactory.cs#L29
-                                                           // Search for --explicitly-allowed-ports or network.security.ports.banned.override
-                "https" => GetRandomFreePort(44300, 44400),
+                "http" => portAllocator.GetRandomFreePort(5000, 10000),  // There are certain ports that browsers will object to that should be avoided.
+                                                                         // See https://github.com/CZEMacLeod/C3D.Extensions.Playwright.AspNetCore/blob/6d3b92790df905cd44587c983c2b89546a856ee3/src/C3D/Extensions/Playwright/AspNetCore/Factory/PlaywrightWebApplicationFactory.cs#L29
+                                                                         // Search for --explicitly-allowed-ports or network.security.ports.banned.override
+                "https" => portAllocator.GetRandomFreePort(44300, 44400),
                 _ => throw new InvalidOperationException($"Unsupported uri scheme: {endpoint.UriScheme}")
             };
             endpoint.TargetPort = port;
@@ -260,14 +178,14 @@ public static class IISExpressEntensions
         return port!.Value;
     }
 
-    internal static Site CreateIISConfigSite(this IISExpressSiteResource site, int id, string appPool, ILogger logger)
+    internal static Site CreateIISConfigSite(this IISExpressSiteResource site, int id, string appPool, ILogger logger, C3D.Extensions.Networking.PortAllocator portAllocator)
     {
-        var tempSite = CreateIISConfigSite(site, id, site.Name, site.WorkingDirectory, appPool, logger);
-        ShowIISExpressHttpsEndpointInformation(site, logger);
+        var tempSite = CreateIISConfigSite(site, id, site.Name, site.WorkingDirectory, appPool, logger, portAllocator);
+        ShowIISExpressHttpsEndpointInformation(site, logger, portAllocator);
         return tempSite;
     }
 
-    internal static Site CreateIISConfigSite(this IResourceWithEndpoints site, int id, string name, string path, string appPool, ILogger logger)
+    internal static Site CreateIISConfigSite(this IResourceWithEndpoints site, int id, string name, string path, string appPool, ILogger logger, C3D.Extensions.Networking.PortAllocator portAllocator)
     {
         var tempSite = new Site()
         {
@@ -285,7 +203,7 @@ public static class IISExpressEntensions
             },
             Bindings = new()
             {
-                Binding = [.. site.CreateIISConfigBindings()]
+                Binding = [.. site.CreateIISConfigBindings(portAllocator)]
             }
         };
 
@@ -304,22 +222,22 @@ public static class IISExpressEntensions
         return tempSite;
     }
 
-    internal static IEnumerable<Binding> CreateIISConfigBindings(this IResourceWithEndpoints project)
+    internal static IEnumerable<Binding> CreateIISConfigBindings(this IResourceWithEndpoints project, C3D.Extensions.Networking.PortAllocator portAllocator)
     {
         foreach (var endpoint in project.Annotations.OfType<EndpointAnnotation>())
         {
-            yield return CreateIISConfigBinding(endpoint);
+            yield return CreateIISConfigBinding(endpoint, portAllocator);
         }
     }
 
-    internal static Binding CreateIISConfigBinding(this EndpointAnnotation endpoint)
+    internal static Binding CreateIISConfigBinding(this EndpointAnnotation endpoint, C3D.Extensions.Networking.PortAllocator portAllocator)
     {
         //if (endpoint.IsProxied)
         //{
         //    throw new InvalidOperationException("Endpoints for IIS Express must not be proxied");
         //}
 
-        int? port = EnsureValidIISEndpointPort(endpoint);
+        int? port = EnsureValidIISEndpointPort(endpoint, portAllocator);
 
         return new Binding()
         {
@@ -328,26 +246,26 @@ public static class IISExpressEntensions
         };
     }
 
-    internal static IResourceBuilder<T> ShowIISExpressHttpsEndpointInformation<T>(IResourceBuilder<T> resourceBuilder, ILogger? logger = null, IISExpressBitness? bitness = null)
+    internal static IResourceBuilder<T> ShowIISExpressHttpsEndpointInformation<T>(IResourceBuilder<T> resourceBuilder, C3D.Extensions.Networking.PortAllocator portAllocator, ILogger? logger = null, IISExpressBitness? bitness = null)
         where T : IResourceWithEndpoints
     {
         var resource = resourceBuilder.Resource;
-        resource.ShowIISExpressHttpsEndpointInformation(resourceBuilder.ApplicationBuilder.Eventing, logger, bitness);
+        resource.ShowIISExpressHttpsEndpointInformation(resourceBuilder.ApplicationBuilder.Eventing, portAllocator, logger, bitness);
         return resourceBuilder;
     }
 
-    internal static void ShowIISExpressHttpsEndpointInformation<T>(this T resource, IDistributedApplicationEventing eventing, ILogger? logger = null, IISExpressBitness? bitness = null) 
+    internal static void ShowIISExpressHttpsEndpointInformation<T>(this T resource, IDistributedApplicationEventing eventing, C3D.Extensions.Networking.PortAllocator portAllocator, ILogger? logger = null, IISExpressBitness? bitness = null)
         where T : IResourceWithEndpoints
     {
         eventing.Subscribe<ResourceEndpointsAllocatedEvent>(resource, (e, c) =>
         {
             logger ??= e.Services.GetRequiredService<ResourceLoggerService>().GetLogger(e.Resource);
-            ShowIISExpressHttpsEndpointInformation((IResourceWithEndpoints)e.Resource, logger, bitness);
+            ShowIISExpressHttpsEndpointInformation((IResourceWithEndpoints)e.Resource, logger, portAllocator, bitness);
             return Task.CompletedTask;
         });
     }
 
-    internal static EndpointAnnotation AddOrUpdateEndpointFromBinding(this IResourceWithEndpoints resource, Binding binding, ILogger? logger = null)
+    internal static EndpointAnnotation AddOrUpdateEndpointFromBinding(this IResourceWithEndpoints resource, Binding binding, C3D.Extensions.Networking.PortAllocator portAllocator, ILogger? logger = null)
     {
         var hostName = string.IsNullOrEmpty(binding.HostName) ? "localhost" : binding.HostName;
 
@@ -368,11 +286,11 @@ public static class IISExpressEntensions
         }
         if (StringComparer.OrdinalIgnoreCase.Equals(hostName, "localhost"))
         {
-            MarkPortAsUsed(binding.Port);
+            portAllocator.MarkPortAsUsed(binding.Port);
         }
         else
         {
-            if (!TryMarkPortAsUsed(binding.Port))
+            if (!portAllocator.TryMarkPortAsUsed(binding.Port))
             {
                 logger?.LogWarning("Port {Port} is already allocated. Ensure each binding has a unique hostName.", binding.Port);
             }
@@ -395,7 +313,8 @@ public static class IISExpressEntensions
         var iis = builder.AddResource(resource)
             .WithAnnotation(new AppPoolArgumentAnnotation(AppPoolArgumentAnnotation.DefaultAppPool));
 
-        builder.Services.AddSingleton<CommandExecutor>();
+        builder.Services.TryAddSingleton<CommandExecutor>();
+        builder.Services.TryAddSingleton<C3D.Extensions.Networking.PortAllocator>();
 
         //if (builder.Environment.IsDevelopment() && builder.ExecutionContext.IsRunMode)
         //{
@@ -420,10 +339,11 @@ public static class IISExpressEntensions
             var appHostConfig = iisResource.GetDefaultConfiguration();
 
             var logger = @event.Services.GetRequiredService<ResourceLoggerService>().GetLogger(iisResource);
+            var portAllocator = @event.Services.GetRequiredService<C3D.Extensions.Networking.PortAllocator>();
 
             appHostConfig.SystemApplicationHost.Sites = new()
             {
-                Site = [.. CreateSites(iisResource.Sites, appPoolAnnotation.AppPool, logger)]
+                Site = [.. CreateSites(iisResource.Sites, appPoolAnnotation.AppPool, logger, portAllocator)]
             };
 
             var path = iisResource.SaveConfiguration(appHostConfig);
@@ -439,14 +359,14 @@ public static class IISExpressEntensions
 
         return iis;
 
-        static IEnumerable<Site> CreateSites(IEnumerable<IISExpressSiteResource> sites, string appPool, ILogger logger)
+        static IEnumerable<Site> CreateSites(IEnumerable<IISExpressSiteResource> sites, string appPool, ILogger logger, C3D.Extensions.Networking.PortAllocator portAllocator)
         {
             var id = 0;
 
             foreach (var site in sites)
             {
                 id++;
-                yield return site.CreateIISConfigSite(id, appPool, logger);
+                yield return site.CreateIISConfigSite(id, appPool, logger, portAllocator);
             }
         }
     }
@@ -459,11 +379,12 @@ public static class IISExpressEntensions
 
         builder.ApplicationBuilder.Eventing.Subscribe<BeforeStartEvent>((@event, token) =>
         {
+            var portAllocator = @event.Services.GetRequiredService<C3D.Extensions.Networking.PortAllocator>();
             if (!resource.TryGetEndpoints(out var endpoints))
             {
                 resource.WithDefaultIISExpressEndpoints();
             }
-            resource.EnsureValidIISEndpoints();
+            resource.EnsureValidIISEndpoints(portAllocator);
 
             // Inherit the default apppool if not explicitly set
             if (!resource.HasAnnotationOfType<AppPoolArgumentAnnotation>() && resource.IISExpress.TryGetLastAnnotation<AppPoolArgumentAnnotation>(out var appPool))
@@ -573,9 +494,9 @@ public static class IISExpressEntensions
         if (options is not null)
             o.Configure(options);
 
-        builder.Services.AddTransient<IISEndPointConfigurator>();
-
-        builder.Services.AddSingleton<CommandExecutor>();
+        builder.Services.TryAddTransient<IISEndPointConfigurator>();
+        builder.Services.TryAddSingleton<CommandExecutor>();
+        builder.Services.TryAddSingleton<C3D.Extensions.Networking.PortAllocator>();
 
         builder.Eventing.Subscribe<BeforeStartEvent>((@event, cancellationToken) =>
         {

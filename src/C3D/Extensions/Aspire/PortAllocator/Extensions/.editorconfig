@@ -1,0 +1,8 @@
+# Remove the line below if you want to inherit .editorconfig settings from higher directories
+root = false
+
+# C# files
+[*.cs]
+
+dotnet_style_namespace_match_folder = false
+dotnet_diagnostic.IDE0130.severity = silent

@@ -14,6 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{E1FFCD98
 		build\DetectPackages.ps1 = build\DetectPackages.ps1
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
+		.github\workflows\dotnet-msbuild-vstest.yml = .github\workflows\dotnet-msbuild-vstest.yml
 		global.json = global.json
 		build\ImportCert.ps1 = build\ImportCert.ps1
 		LICENSE.txt = LICENSE.txt
@@ -119,6 +120,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OutputWatcherTestProject", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "C3D.Extensions.Aspire.SystemWebAdapters", "src\C3D\Extensions\Aspire\SystemWebAdapters\C3D.Extensions.Aspire.SystemWebAdapters.csproj", "{213BA945-410C-4726-B764-BF043E08ACA3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "C3D.Extensions.Aspire.PortAllocator", "src\C3D\Extensions\Aspire\PortAllocator\C3D.Extensions.Aspire.PortAllocator.csproj", "{943FDA5D-9D54-414D-AAB5-76CC21F36D22}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -217,6 +220,10 @@ Global
 		{213BA945-410C-4726-B764-BF043E08ACA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{213BA945-410C-4726-B764-BF043E08ACA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{213BA945-410C-4726-B764-BF043E08ACA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{943FDA5D-9D54-414D-AAB5-76CC21F36D22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{943FDA5D-9D54-414D-AAB5-76CC21F36D22}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{943FDA5D-9D54-414D-AAB5-76CC21F36D22}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{943FDA5D-9D54-414D-AAB5-76CC21F36D22}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -256,6 +263,7 @@ Global
 		{41C173BA-2164-4764-B195-C815E37F36F7} = {D099C3D1-6952-4B8D-B7D9-4D623C1D6B26}
 		{13C2606F-B44D-4127-AD96-908F152E124B} = {8AFDAAF4-2682-43BB-B576-24B96DFDEF49}
 		{213BA945-410C-4726-B764-BF043E08ACA3} = {D5AA99D3-6A86-4816-8C06-41207B980DBD}
+		{943FDA5D-9D54-414D-AAB5-76CC21F36D22} = {D5AA99D3-6A86-4816-8C06-41207B980DBD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7A2C1EF4-C8A0-49A5-8198-0BFBDFE2EE42}
