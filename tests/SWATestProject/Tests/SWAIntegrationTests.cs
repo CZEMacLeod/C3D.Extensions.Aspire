@@ -2,17 +2,20 @@ using Aspire.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SWATestProject.Fixtures;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Xunit.Abstractions;
 
 namespace SWATestProject.Tests;
 
-public class SWAIntegrationTests(ITestOutputHelper outputHelper)
+public class SWAIntegrationTests(ITestOutputHelper outputHelper, NetworkingFixture networkingFixture) : IClassFixture<NetworkingFixture>
 {
     private void WriteFunctionName([CallerMemberName] string? caller = null) => outputHelper.WriteLine(caller);
     private const int WaitForHealthyTimeoutSeconds = 90;    
     private static readonly TimeSpan WaitForHealthyTimeout = TimeSpan.FromSeconds(WaitForHealthyTimeoutSeconds);
+
+    private C3D.Extensions.Networking.PortAllocator PortAllocator => networkingFixture.PortAllocator;
 
     private async Task<IDistributedApplicationTestingBuilder> CreateAppHostAsync()
     {
@@ -72,12 +75,12 @@ public class SWAIntegrationTests(ITestOutputHelper outputHelper)
         return appHost;
     }
 
-    private static void ConfigureOtlpOverHttp(HostApplicationBuilderSettings host, Action<string>? logMessage = null) =>
+    private void ConfigureOtlpOverHttp(HostApplicationBuilderSettings host, Action<string>? logMessage = null) =>
         ConfigureOtlpOverHttp(host.Configuration!, logMessage);
 
-    private static void ConfigureOtlpOverHttp(ConfigurationManager configuration, Action<string>? logMessage = null)
+    private void ConfigureOtlpOverHttp(ConfigurationManager configuration, Action<string>? logMessage = null)
     {
-        var port = IISExpressEntensions.GetRandomFreePort(20000, 30000);
+        var port = PortAllocator.GetRandomFreePort(20000, 30000);
         var otlp = new UriBuilder("https", "localhost", port).ToString();
         logMessage?.Invoke($"Setting OTLP endpoint to {otlp}");
         var dict = new Dictionary<string, string?>()

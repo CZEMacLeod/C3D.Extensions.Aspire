@@ -14,16 +14,19 @@ internal class IISEndPointConfigurator
     private readonly IDistributedApplicationEventing eventing;
     private readonly IOptions<IISExpressOptions> options;
     private readonly ILogger<IISEndPointConfigurator> logger;
+    private readonly C3D.Extensions.Networking.PortAllocator portAllocator;
 
     public IISEndPointConfigurator(DistributedApplicationModel appModel,
         IDistributedApplicationEventing eventing,
         IOptions<IISExpressOptions> options, 
-        ILogger<IISEndPointConfigurator> logger)
+        ILogger<IISEndPointConfigurator> logger,
+        C3D.Extensions.Networking.PortAllocator portAllocator)
     {
         this.appModel = appModel;
         this.eventing = eventing;
         this.options = options;
         this.logger = logger;
+        this.portAllocator = portAllocator;
     }
 
     public void Configure()
@@ -113,18 +116,18 @@ internal class IISEndPointConfigurator
             var matches = new Dictionary<EndpointAnnotation, Configuration.Binding>();
             foreach (var binding in siteConfig.Bindings.Binding)
             {
-                var endpoint = project.AddOrUpdateEndpointFromBinding(binding, logger);
+                var endpoint = project.AddOrUpdateEndpointFromBinding(binding,portAllocator, logger);
                 matches[endpoint] = binding;
             }
 
             var endpoints = project.Annotations.OfType<EndpointAnnotation>().Except(matches.Keys).ToList();
             if (endpoints.Count != 0)
             {
-                siteConfig.Bindings.Binding.AddRange(endpoints.Select(e => e.CreateIISConfigBinding()));
+                siteConfig.Bindings.Binding.AddRange(endpoints.Select(e => e.CreateIISConfigBinding(portAllocator)));
                 SaveConfig();
             }
 
-            project.ShowIISExpressHttpsEndpointInformation(eventing, logger, project.Bitness);
+            project.ShowIISExpressHttpsEndpointInformation(eventing, portAllocator, logger, project.Bitness);
         }
         else
         {
@@ -138,11 +141,11 @@ internal class IISEndPointConfigurator
             }
 
             var siteId = appConfig.SystemApplicationHost.Sites.Site.Max(s => int.TryParse(s.Id, out var id) ? id : 0) + 1;
-            var newSite = project.CreateIISConfigSite(siteId, site.Site, project.WorkingDirectory, appPool.AppPool, logger);
+            var newSite = project.CreateIISConfigSite(siteId, site.Site, project.WorkingDirectory, appPool.AppPool, logger, portAllocator);
             appConfig.SystemApplicationHost.Sites.Site.Add(newSite);
             SaveConfig();
 
-            project.ShowIISExpressHttpsEndpointInformation(eventing, logger, project.Bitness);
+            project.ShowIISExpressHttpsEndpointInformation(eventing, portAllocator, logger, project.Bitness);
         }
     }
 }

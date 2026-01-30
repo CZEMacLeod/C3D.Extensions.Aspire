@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting" Version="13.1.0" />
+    <PackageReference Include="C3D.Extensions.Networking.PortAllocator" Version="0.1.19" />
     <ProjectReference Include="..\VisualStudioDebug\C3D.Extensions.Aspire.VisualStudioDebug.csproj" />
     <None Include="build\*.*" Pack="true" PackagePath="build\%(Filename)%(Extension)" Visible="true" />
   </ItemGroup>
