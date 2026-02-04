@@ -1,0 +1,96 @@
+<Solution>
+  <Folder Name="/build/">
+    <File Path=".editorconfig" />
+    <File Path=".github/dependabot.yml" />
+    <File Path=".github/workflows/dotnet-msbuild-vstest.yml" />
+    <File Path=".vs/C3D.Extensions.Aspire/config/applicationhost.config" />
+    <File Path="build/azure-pipelines.yml" />
+    <File Path="build/ConvertTo-MarkdownTable.ps1" />
+    <File Path="build/CreateDevCert.ps1" />
+    <File Path="build/DetectPackages.ps1" />
+    <File Path="build/ImportCert.ps1" />
+    <File Path="build/nuget.publish.config" />
+    <File Path="build/RemoveCert.ps1" />
+    <File Path="build/Test.snk" />
+    <File Path="build/vs-workaround.targets" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="global.json" />
+    <File Path="LICENSE.txt" />
+    <File Path="README.md" />
+    <File Path="Set-WebApplicationTargetsPath.ps1" />
+  </Folder>
+  <Folder Name="/samples/">
+    <File Path="samples/Directory.Build.props" />
+  </Folder>
+  <Folder Name="/samples/EF6/">
+    <Project Path="samples/EF6/AspireAppHost/AspireAppHostEF6.csproj" />
+    <Project Path="samples/EF6/EF6/EF6WebApp.csproj" />
+  </Folder>
+  <Folder Name="/samples/Legacy/">
+    <Project Path="samples/Legacy/AspireAppHost3/AspireAppHostLegacy.csproj">
+      <Build Project="false" />
+    </Project>
+    <Project Path="samples/Legacy/LegacyWebApplication/LegacyWebApplication.csproj">
+      <Build Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/samples/NodeJS/">
+    <Project Path="samples/NodeJS/AppHostNodeJS/AspireAppHostNodeJS.csproj" />
+    <Project Path="samples/NodeJS/ExpressProject/ExpressProject.esproj">
+      <Build />
+      <Deploy />
+    </Project>
+    <Project Path="samples/NodeJS/NodeConsoleApp/NodeConsoleApp.esproj">
+      <Build />
+      <Deploy />
+    </Project>
+  </Folder>
+  <Folder Name="/samples/SimpleMVC/">
+    <Project Path="samples/Simple/AspireAppHost/AspireAppHostSimpleMVC.csproj" />
+    <Project Path="samples/Simple/SimpleMVC/SimpleMVC.csproj" />
+  </Folder>
+  <Folder Name="/samples/SWA/">
+    <File Path="samples/SWA/Directory.Build.props" />
+    <File Path="samples/SWA/version.json" />
+    <Project Path="samples/SWA/SWAAspireHost/AspireAppHostSWA.csproj" />
+    <Project Path="samples/SWA/SWACore/SWACore.csproj" />
+    <Project Path="samples/SWA/SWAFramework/SWAFramework.csproj" />
+    <Project Path="samples/SWA/SWALibrary/SWALibrary.csproj" />
+    <Project Path="samples/SWA/SWAShared/SWAShared.shproj" />
+  </Folder>
+  <Folder Name="/samples/WaitForConsole/">
+    <Project Path="samples/WaitForOutput/AspireWaitForConsoleOutput.AppHost/AspireAppHostWaitForConsole.csproj" />
+    <Project Path="samples/WaitForOutput/AspireWaitForConsoleOutput.ServiceDefaults/WaitForConsole.Shared.csproj" />
+    <Project Path="samples/WaitForOutput/ConsoleApp/WaitForConsole.ConsoleApp.csproj" />
+    <Project Path="samples/WaitForOutput/WebApplication/WaitForConsole.WebApp.csproj" />
+  </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/C3D/" />
+  <Folder Name="/src/C3D/Extensions/">
+    <File Path="src/C3D/Extensions/Directory.Build.props" />
+    <File Path="src/C3D/Extensions/Directory.Build.Targets" />
+    <Project Path="src/C3D/Extensions/HostingExtensions.Shared/C3D.Extensions.HostingExtensions.Shared.shproj" />
+    <Project Path="src/C3D/Extensions/SystemWeb/OpenTelemetry/Application/C3D.Extensions.SystemWeb.OpenTelemetry.Application.csproj" />
+    <Project Path="src/C3D/Extensions/VisualStudioDebug/C3D.Extensions.VisualStudioDebug.csproj" />
+  </Folder>
+  <Folder Name="/src/C3D/Extensions/Aspire/">
+    <File Path="src/C3D/Extensions/Aspire/Directory.Build.props" />
+    <File Path="src/C3D/Extensions/Aspire/Directory.Build.Targets" />
+    <Project Path="src/C3D/Extensions/Aspire/Fluent/C3D.Extensions.Aspire.Fluent.csproj" />
+    <Project Path="src/C3D/Extensions/Aspire/IISExpress/C3D.Extensions.Aspire.IISExpress.csproj" />
+    <Project Path="src/C3D/Extensions/Aspire/Node/C3D.Extensions.Aspire.Node.csproj" />
+    <Project Path="src/C3D/Extensions/Aspire/OutputWatcher/C3D.Extensions.Aspire.OutputWatcher.csproj" />
+    <Project Path="src/C3D/Extensions/Aspire/PortAllocator/C3D.Extensions.Aspire.PortAllocator.csproj" />
+    <Project Path="src/C3D/Extensions/Aspire/SystemWebAdapters/C3D.Extensions.Aspire.SystemWebAdapters.csproj" />
+    <Project Path="src/C3D/Extensions/Aspire/VisualStudioDebug/C3D.Extensions.Aspire.VisualStudioDebug.csproj" />
+    <Project Path="src/C3D/Extensions/Aspire/WaitForOutput/C3D.Extensions.Aspire.WaitForOutput.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <File Path="tests/default.runsettings" />
+    <File Path="tests/Directory.Build.props" />
+    <File Path="tests/Directory.Build.Targets" />
+    <Project Path="tests/OutputWatcherTestProject/OutputWatcherTestProject.csproj" />
+    <Project Path="tests/SWATestProject/SWATestProject.csproj" />
+  </Folder>
+</Solution>
