@@ -31,8 +31,13 @@ Please see the individual package readmes for more information.
 [![NuGet downloads](https://img.shields.io/nuget/dt/C3D.Extensions.Aspire.Fluent.svg)](https://nuget.org/packages/C3D.Extensions.Aspire.Fluent)
 
 ## [C3D.Extensions.Aspire.SystemWebAdapters](src/C3D/Extensions/Aspire/SystemWebAdapters/README.md)
-[![NuGet package](https://img.shields.io/nuget/v/C3D.Extensions.Aspire.SystemWebAdapters.svg)](https://nuget.org/packages/C3D.Extensions.SystemWebAdapters.Fluent)
-[![NuGet downloads](https://img.shields.io/nuget/dt/C3D.Extensions.Aspire.SystemWebAdapters.svg)](https://nuget.org/packages/C3D.Extensions.SystemWebAdapters.Fluent)
+[![NuGet package](https://img.shields.io/nuget/v/C3D.Extensions.Aspire.SystemWebAdapters.svg)](https://nuget.org/packages/C3D.Extensions.Aspire.SystemWebAdapters)
+[![NuGet downloads](https://img.shields.io/nuget/dt/C3D.Extensions.Aspire.SystemWebAdapters.svg)](https://nuget.org/packages/C3D.Extensions.Aspire.SystemWebAdapters)
+
+
+## [C3D.Extensions.Aspire.Node](src/C3D/Extensions/Aspire/Node/README.md)
+[![NuGet package](https://img.shields.io/nuget/v/C3D.Extensions.Aspire.Node.svg)](https://nuget.org/packages/C3D.Extensions.Node)
+[![NuGet downloads](https://img.shields.io/nuget/dt/C3D.Extensions.Aspire.Node.svg)](https://nuget.org/packages/C3D.Extensions.Node)
 
 > [!WARNING]  
 > I am not a node developer and the support is currently pretty basic. 
@@ -77,9 +82,10 @@ Traces show the request span of the core app, the proxy request, and the framewo
 
 ## Node
 This shows using Aspire to develop a simple Node / Express based application with full debugging support while using Aspire.
-Simply set a breakpoint in `app.js` such as on line 62 - the delegate body.
+Simply set a breakpoint in `app.js` such as on line 63 - the delegate body.
 ```js
 app.get('/', function (req, res) {
+    // As an example - put a breakpoint on the next line
     res.send('Hello World!');
 });
 ```

@@ -4,8 +4,4 @@
     <!-- Allows the build (or compile) script located on package.json to run on Build -->
     <ShouldRunBuildScript>true</ShouldRunBuildScript>
   </PropertyGroup>
-  <ItemGroup>
-    <Folder Include="bin\www\" />
-    <Folder Include="public\" />
-  </ItemGroup>
 </Project>

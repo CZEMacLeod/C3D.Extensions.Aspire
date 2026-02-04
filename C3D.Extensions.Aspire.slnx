@@ -41,10 +41,6 @@
       <Build />
       <Deploy />
     </Project>
-    <Project Path="samples/NodeJS/NodeConsoleApp/NodeConsoleApp.esproj">
-      <Build />
-      <Deploy />
-    </Project>
   </Folder>
   <Folder Name="/samples/SimpleMVC/">
     <Project Path="samples/Simple/AspireAppHost/AspireAppHostSimpleMVC.csproj" />
