@@ -31,7 +31,7 @@
     <Project Path="samples/Legacy/AspireAppHost3/AspireAppHostLegacy.csproj">
       <Build Project="false" />
     </Project>
-    <Project Path="samples/Legacy/LegacyWebApplication/LegacyWebApplication.csproj">
+    <Project Path="samples/Legacy/LegacyWebApplication/LegacyWebApplication.csproj" Id="85c0e2ee-a1db-40d8-be13-44b740101986">
       <Build Project="false" />
     </Project>
   </Folder>

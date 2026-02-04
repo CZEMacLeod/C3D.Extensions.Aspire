@@ -17,8 +17,7 @@ if (builder.Environment.IsDevelopment() && launchProfile == "https")
     webapp
         .WithHttpsEndpoint(env: "HTTPS_PORT")
         .WithHttpsRedirctionPort("HTTPS_REDIRECT_PORT")
-        .RunWithHttpsDevCertificate("HTTPS_CERT_FILE", "HTTPS_CERT_KEY_FILE")
-        .WithHttpsHealthCheck("/alive"); ;
+        .RunWithHttpsDevCertificate("HTTPS_CERT_FILE", "HTTPS_CERT_KEY_FILE");
 }
 
 

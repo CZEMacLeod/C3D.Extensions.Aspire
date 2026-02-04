@@ -1,10 +1,10 @@
 ﻿using Aspire.Hosting.ApplicationModel;
-using C3D.Extensions.Aspire.Node;
+using Aspire.Hosting.JavaScript;
 using C3D.Extensions.Aspire.Node.Annotations;
 using C3D.Extensions.Aspire.OutputWatcher;
 using C3D.Extensions.Aspire.VisualStudioDebug;
 using C3D.Extensions.Aspire.VisualStudioDebug.Annotations;
-using C3D.Extensions.Aspire.VisualStudioDebug.WellKnown;
+using C3D.Extensions.VisualStudioDebug.WellKnown;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -24,7 +24,8 @@ public static partial class NodeDebugExtensions
         var prj = new TProject();
         var prjPath = System.IO.Path.GetDirectoryName(prj.ProjectPath)!;
 
-        return builder.AddNodeApp(name, path, prjPath, args);
+        return builder.AddNodeApp(name, path, prjPath)
+            .WithArgs(args);
     }
 
     //public static IResourceBuilder<NodeAppResource> AddNpmApp<TProject>(

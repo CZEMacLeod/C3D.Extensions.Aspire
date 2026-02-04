@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Aspire.Hosting.JavaScript;
+using Microsoft.Extensions.Hosting;
 
 namespace Aspire.Hosting;
 
@@ -8,7 +9,7 @@ public static class NodeHostingExtensions
     /// Injects the ASP.NET Core HTTPS developer certificate into the resource via the specified environment variables when
     /// <paramref name="builder"/>.<see cref="IResourceBuilder{T}.ApplicationBuilder">ApplicationBuilder</see>.<see cref="IDistributedApplicationBuilder.ExecutionContext">ExecutionContext</see>.<see cref="DistributedApplicationExecutionContext.IsRunMode">IsRunMode</see><c> == true</c>.<br/>
     /// </summary>
-    public static IResourceBuilder<NodeAppResource> RunWithHttpsDevCertificate(this IResourceBuilder<NodeAppResource> builder, string certFileEnv, string certKeyFileEnv, string httpPortEnv)
+    public static IResourceBuilder<JavaScriptAppResource> RunWithHttpsDevCertificate(this IResourceBuilder<JavaScriptAppResource> builder, string certFileEnv, string certKeyFileEnv, string httpPortEnv)
     {
         if (builder.ApplicationBuilder.ExecutionContext.IsRunMode && builder.ApplicationBuilder.Environment.IsDevelopment())
         {
@@ -28,10 +29,10 @@ public static class NodeHostingExtensions
         return builder;
     }
 
-    public static IResourceBuilder<NodeAppResource> WithHttpsRedirctionPort(this IResourceBuilder<NodeAppResource> builder,
+    public static IResourceBuilder<JavaScriptAppResource> WithHttpsRedirctionPort(this IResourceBuilder<JavaScriptAppResource> builder,
         string env, string endpointName = "https") => WithHttpsRedirctionPort(builder, env, builder.GetEndpoint(endpointName));
 
-    private static IResourceBuilder<NodeAppResource> WithHttpsRedirctionPort(this IResourceBuilder<NodeAppResource> builder, string env, EndpointReference httpsEndpoint) => 
+    private static IResourceBuilder<JavaScriptAppResource> WithHttpsRedirctionPort(this IResourceBuilder<JavaScriptAppResource> builder, string env, EndpointReference httpsEndpoint) => 
         builder.WithEnvironment(context => 
             context.EnvironmentVariables[env] = ReferenceExpression.Create($"{httpsEndpoint.Property(EndpointProperty.Port)}"));
 }
