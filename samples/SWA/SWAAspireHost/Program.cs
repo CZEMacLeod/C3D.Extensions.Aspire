@@ -15,7 +15,6 @@ const string healthCheckEndpointName = "healthcheck-http";
 var localFramework = "net" + System.Environment.Version.ToString(2);
 
 var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
-    .WithArgs("-f", localFramework)
     //.WithConfigLocation("test.config")  // use a custom config file - will be created if it doesn't exist
 
 
@@ -75,6 +74,7 @@ var framework = builder.AddIISExpressProject<Projects.SWAFramework>("framework")
     ;
 
 var core = builder.AddProject<Projects.SWACore>("core")
+    .WithArgs("--framework", localFramework)
     //.WithSystemWebAdapters(framework)   // Use this __or__ the AddSystemWebAdapters method below
     .WithHttpHealthCheck("/alive")
     .WithUrlForEndpoint("http", u =>
