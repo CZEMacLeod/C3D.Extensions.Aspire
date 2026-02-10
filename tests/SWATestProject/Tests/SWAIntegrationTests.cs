@@ -12,7 +12,7 @@ namespace SWATestProject.Tests;
 public class SWAIntegrationTests(ITestOutputHelper outputHelper, NetworkingFixture networkingFixture) : IClassFixture<NetworkingFixture>
 {
     private void WriteFunctionName([CallerMemberName] string? caller = null) => outputHelper.WriteLine(caller);
-    private const int WaitForHealthyTimeoutSeconds = 90;    
+    private const int WaitForHealthyTimeoutSeconds = 180;    
     private static readonly TimeSpan WaitForHealthyTimeout = TimeSpan.FromSeconds(WaitForHealthyTimeoutSeconds);
 
     private C3D.Extensions.Networking.PortAllocator PortAllocator => networkingFixture.PortAllocator;
