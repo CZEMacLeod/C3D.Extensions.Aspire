@@ -6,6 +6,7 @@
   },
   "msbuild-sdks": {
     "MSBuild.SDK.SystemWeb": "4.0.106",
-    "MSBuild.SDK.SystemWeb.RazorLibrary": "4.0.106"
+    "MSBuild.SDK.SystemWeb.RazorLibrary": "4.0.106",
+    "Microsoft.VisualStudio.JavaScript.Sdk": "1.0.3982316"
   }
 }

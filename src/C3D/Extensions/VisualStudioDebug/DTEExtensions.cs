@@ -1,6 +1,7 @@
 ﻿using EnvDTE;
 using EnvDTE80;
 using System.Diagnostics;
+using System.Text;
 
 namespace C3D.Extensions.VisualStudioDebug;
 
@@ -31,7 +32,7 @@ internal static class DTEExtensions
         else
         {
             port = debugger.Transports.Item(transport);
-            if (!string.Equals(port.Name,transport, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(port.Name, transport, StringComparison.OrdinalIgnoreCase))
             {
                 Debug.WriteLine($"Transport {transport} does not match returned object {port.Name} {port.ID}");
                 port = null;
@@ -56,14 +57,14 @@ internal static class DTEExtensions
         }
         foreach (var engine in engines)
         {
-            Engine resolvedEngine=null!;
+            Engine resolvedEngine = null!;
             if (Guid.TryParse(engine, out var _))
             {
                 foreach (Engine e in transport.Engines)
                 {
                     if (e.ID == engine)
                     {
-                        resolvedEngine=e;
+                        resolvedEngine = e;
                         break;
                     }
                 }
@@ -72,7 +73,16 @@ internal static class DTEExtensions
             {
                 resolvedEngine = transport.Engines.Item(engine);
             }
-            if (resolvedEngine is null) throw new ArgumentOutOfRangeException(nameof(engines));
+            if (resolvedEngine is null)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"Engine {engine} not found.");
+                foreach (Engine e in transport.Engines)
+                {
+                    sb.AppendLine($"Available Engine: {e.Name} {e.ID}");
+                }
+                throw new ArgumentOutOfRangeException(nameof(engines), sb.ToString());
+            }
             yield return resolvedEngine;
         }
     }

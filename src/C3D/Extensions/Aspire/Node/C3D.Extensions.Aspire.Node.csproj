@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0-windows;net9.0-windows;net10.0-windows</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyTitle>$(AssemblyTitle) Node</AssemblyTitle>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.1.0" />
+    <!--<PackageReference Include="Aspire.Hosting.NodeJs" Version="9.2.0" />-->
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OutputWatcher\C3D.Extensions.Aspire.OutputWatcher.csproj" />
+    <ProjectReference Include="..\VisualStudioDebug\C3D.Extensions.Aspire.VisualStudioDebug.csproj" />
+  </ItemGroup>
+  
+</Project>

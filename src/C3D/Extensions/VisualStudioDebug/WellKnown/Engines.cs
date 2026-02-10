@@ -32,7 +32,7 @@ public class Engines
     public const string Net4 = "{FB0D4648-F776-4980-95F8-BB7F36EBC1EE}";
     
     [System.ComponentModel.DataAnnotations.Display(Name = "JavaScript and TypeScript")]
-    public const string JavaScript = "{3FBCC828-6272-46D4-B5FA-B7E643672113}";
+    public const string JavaScript = "{394120B6-2FF9-4D0D-8953-913EF5CD0BCD}";
     
     [System.ComponentModel.DataAnnotations.Display(Name = "JavaScript and TypeScript")]
     public const string TypeScript = JavaScript;

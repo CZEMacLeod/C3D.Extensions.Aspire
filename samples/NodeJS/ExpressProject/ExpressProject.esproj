@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk">
+  <PropertyGroup>
+    <StartupCommand>node app.js</StartupCommand>
+    <!-- Allows the build (or compile) script located on package.json to run on Build -->
+    <ShouldRunBuildScript>true</ShouldRunBuildScript>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- Prevents issues with dotnet restore etc. -->
+    <!-- https://github.com/NuGet/Home/issues/12817 -->
+    <RestoreEnableGlobalPackageReference>false</RestoreEnableGlobalPackageReference>
+    <RestoreProjectStyle>None</RestoreProjectStyle>
+  </PropertyGroup>
+</Project>

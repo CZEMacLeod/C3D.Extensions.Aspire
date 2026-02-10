@@ -31,8 +31,11 @@ parameters:
     values:
       - 'C3D.Extensions.Aspire.Fluent'
       - 'C3D.Extensions.Aspire.IISExpress'
-      - 'C3D.Extensions.Aspire.VisualStudioDebug'
+      - 'C3D.Extensions.Aspire.Node'
       - 'C3D.Extensions.Aspire.OutputWatcher'
+      - 'C3D.Extensions.Aspire.PortAllocator'
+      - 'C3D.Extensions.Aspire.SystemWebAdapters'
+      - 'C3D.Extensions.Aspire.VisualStudioDebug'
       - 'C3D.Extensions.Aspire.WaitForOutput'
       - 'C3D.Extensions.SystemWeb.OpenTelemetry.Application' 
       - 'C3D.Extensions.VisualStudioDebug' 
@@ -56,7 +59,7 @@ variables:
 - group: Github-Packages
 - group: 'c3d-devops'
 - name: solution
-  value: 'C3D.Extensions.Aspire.sln'
+  value: 'C3D.Extensions.Aspire.slnx'
 - name: buildPlatform
   value: 'Any CPU'
 - name: buildConfiguration
@@ -128,6 +131,13 @@ steps:
   inputs:
     packageType: 'sdk'
     useGlobalJson: true
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+- task: UseDotNet@2
+  displayName: 'Use .NET Runtime 6.0.x'
+  inputs:
+    packageType: 'runtime'
+    version: "6.0.x"
     installationPath: $(Agent.ToolsDirectory)/dotnet
 
 - task: UseDotNet@2

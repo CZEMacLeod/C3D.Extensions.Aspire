@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Sdk Name="Aspire.AppHost.Sdk" Version="9.2.0" />
+  <Sdk Name="Aspire.AppHost.Sdk" Version="13.1.0" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFrameworks>net8.0-windows;net9.0-windows;net10.0-windows</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsAspireHost>true</IsAspireHost>
@@ -23,8 +23,13 @@
   <Import Project="..\..\..\src\C3D\Extensions\Aspire\IISExpress\build\C3D.Extensions.Aspire.IISExpress.props" />
 
   <ItemGroup>
-    <ProjectReference Include="..\SWACore\SWACore.csproj" />
+    <ProjectReference Include="..\SWACore\SWACore.csproj">
+      <SetTargetFramework Condition="'$(TargetFramework)'=='net8.0-windows'">TargetFramework=net8.0</SetTargetFramework>
+      <SetTargetFramework Condition="'$(TargetFramework)'=='net9.0-windows'">TargetFramework=net9.0</SetTargetFramework>
+      <SetTargetFramework Condition="'$(TargetFramework)'=='net10.0-windows'">TargetFramework=net10.0</SetTargetFramework>
+    </ProjectReference>
     <ProjectReference Include="..\SWAFramework\SWAFramework.csproj">
+      <SetTargetFramework>TargetFramework=net48</SetTargetFramework>
       <NoWarn>ASPIRE004</NoWarn>
     </ProjectReference>
   </ItemGroup>

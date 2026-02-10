@@ -1,0 +1,39 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "localhost (Edge)",
+      "type": "edge",
+      "request": "launch",
+      "url": "http://localhost:3030",
+      "webRoot": "${workspaceFolder}\\public"
+    },
+    {
+      "name": "localhost (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3030",
+      "webRoot": "${workspaceFolder}\\public"
+    },
+    {
+      "name": "Launch ExpressProject",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}",
+      "stopOnEntry": true,
+      "env": {
+        "PORT": 3030
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch Node and Browser",
+      "configurations": [
+        "Launch ExpressProject",
+        "localhost (Edge)"
+      ]
+    }
+  ]
+}
