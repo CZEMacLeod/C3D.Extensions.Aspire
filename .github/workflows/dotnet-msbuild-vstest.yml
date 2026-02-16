@@ -55,7 +55,9 @@ jobs:
       run: |
           $vs_path = vswhere -latest -property installationPath
           Write-Host "vs_path=$vs_path"
-          $vs_tools_path = "$vs_path\MSBuild\Microsoft\VisualStudio\v17.0"
+          $vs_version = "$($([Version]$(vswhere -latest -property installationVersion)).Major).0"
+          Write-Host "vs_version=$vs_version"
+          $vs_tools_path = "$vs_path\MSBuild\Microsoft\VisualStudio\v$vs_version"
           Write-Host "vs_tools_path=$vs_tools_path"
           $web_applications_target_path = "$vs_tools_path\WebApplications\Microsoft.WebApplication.targets"
           Write-Host "web_applications_target_path=$web_applications_target_path"
