@@ -166,7 +166,7 @@ steps:
   inputs:
     command: custom
     custom: tool
-    arguments: update sign --global --version 0.9.1-beta.23530.1
+    arguments: update sign --global --version 0.9.1-beta.26227.3
   displayName: Install SignTool tool
     
 - task: NuGetToolInstaller@1
@@ -252,29 +252,31 @@ steps:
   env:
     branchName: $(variables['branchName'])
 
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(build.artifactstagingdirectory)'
+
 
 # Run the signing command
 - task: PowerShell@2
   displayName: Sign packages
   condition: and(succeeded(), eq(variables['push_packages'], 'True'))
+  env:
+    AZURE_TENANT_ID: $(SignTenantId)
+    AZURE_CLIENT_ID: $(SignClientId)
+    AZURE_CLIENT_SECRET: $(SignClientSecret)
   inputs:
     targetType: inline
     script: |
-      sign code azure-key-vault `
-      "**/*.nupkg" `
+      sign code azure-key-vault **\*.nupkg **\*.snupkg `
       --base-directory "$(Build.ArtifactStagingDirectory)" `
       -d "Cynthia Z E MacLeod" `
       -u "https://github.com/CZEMacLeod" `
       -kvu "$(SignVaultURL)" `
       -kvc "c3d-codesign" `
       -v information `
-      -t "$(timestamper)" `
-      --azure-key-vault-tenant-id "$(SignTenantId)" `
-      --azure-key-vault-client-id "$(SignClientId)" `
-      --azure-key-vault-client-secret '$(SignClientSecret)'
+      -t "$(timestamper)"
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(build.artifactstagingdirectory)'
 
 - task: CopyFiles@2
   displayName: Create nuget publish config

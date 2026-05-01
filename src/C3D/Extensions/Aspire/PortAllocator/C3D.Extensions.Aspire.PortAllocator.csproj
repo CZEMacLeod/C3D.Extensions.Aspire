@@ -12,6 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting" Version="13.1.0" />
-    <PackageReference Include="C3D.Extensions.Networking.PortAllocator" Version="0.1.19" />
+    <PackageReference Include="C3D.Extensions.Networking.PortAllocator" Version="0.1.24" />
   </ItemGroup>
 </Project>

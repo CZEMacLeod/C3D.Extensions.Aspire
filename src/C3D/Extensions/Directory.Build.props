@@ -12,6 +12,14 @@
     <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
     <NoWarn>$(NoWarn);NU5128;SA0001</NoWarn>
     <AssemblyTitle>C3D Extensions</AssemblyTitle>
+    <Deterministic>true</Deterministic>
+    <IncludeSymbols>true</IncludeSymbols>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
   <ItemGroup>
