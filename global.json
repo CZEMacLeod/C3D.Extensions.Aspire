@@ -1,12 +1,12 @@
 {
   "sdk": {
-    "version": "10.0.100",
-    "rollForward": "latestMinor",
+    "version": "10.0.105",
+    "rollForward": "latestPatch",
     "allowPrerelease": false
   },
   "msbuild-sdks": {
-    "MSBuild.SDK.SystemWeb": "4.0.106",
-    "MSBuild.SDK.SystemWeb.RazorLibrary": "4.0.106",
+    "MSBuild.SDK.SystemWeb": "4.0.107",
+    "MSBuild.SDK.SystemWeb.RazorLibrary": "4.0.107",
     "Microsoft.VisualStudio.JavaScript.Sdk": "1.0.3982316"
   }
 }
