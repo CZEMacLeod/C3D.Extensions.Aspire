@@ -188,8 +188,8 @@ internal class AttachDebuggerHook : BackgroundService
         {
             logger.LogInformation("Attaching {vs}:{vsId} to {target}:{targetId} for {applicationName}", vs.ProcessName, vs.Id, target!.ProcessName, target.Id, context.Resource.Name);
             await ShowTransportsAsync(vs);
-            await ShowEnginesAsync(vs, "default");
-            await ShowProcessesAsync(vs, "default", null);
+            await ShowEnginesAsync(vs, C3D.Extensions.VisualStudioDebug.WellKnown.Transports.Default);
+            await ShowProcessesAsync(vs, C3D.Extensions.VisualStudioDebug.WellKnown.Transports.Default, null);
             await vs.AttachVisualStudioToProcessAsync(context.ProcessId, engines);
         }
 

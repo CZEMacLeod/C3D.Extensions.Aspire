@@ -96,7 +96,7 @@ public class VisualStudioInstance : IDisposable
     }
 
     public Task<List<(string id, string name, int result)>> GetDebugEnginesAsync(string transport) => RunOnSTAScheduler(() => GetDebugEngines(transport).ToList());
-    private IEnumerable<(string id, string name, int result)> GetDebugEngines(string transport = "default")
+    private IEnumerable<(string id, string name, int result)> GetDebugEngines(string transport = WellKnown.Transports.Default)
     {
         (_, var port) = dte.GetDebugTransport(transport);
         if (port is null)
@@ -119,7 +119,7 @@ public class VisualStudioInstance : IDisposable
     /// Thrown when the application process is null.
     /// </exception>
     public Task AttachVisualStudioToProcessAsync(int processId, params string[] engines)
-        => RunOnSTAScheduler(() => AttachVisualStudioToProcess(vs => (vs.GetDebugTransport("default").transport,
+        => RunOnSTAScheduler(() => AttachVisualStudioToProcess(vs => (vs.GetDebugTransport(WellKnown.Transports.Default).transport,
                         vs.Debugger.LocalProcesses
                         .Cast<DTEProcess>()
                         .FirstOrDefault(process => process.ProcessID == processId)),
