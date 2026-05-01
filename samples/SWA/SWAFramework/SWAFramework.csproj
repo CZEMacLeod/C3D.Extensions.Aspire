@@ -32,6 +32,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Aspire.Microsoft.AspNetCore.SystemWebAdapters" Version="2.2.1-preview.1.25618.2" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.7" />
     <PackageReference Include="Microsoft.Configuration.ConfigurationBuilders.Environment" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
     
@@ -41,7 +42,7 @@
   <ItemGroup Label="SystemWebAdapters">
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.SystemWeb" Version="2.3.9" />
     <PackageReference Include="Microsoft.AspNetCore.SystemWebAdapters.FrameworkServices" Version="2.2.1" />
-    <PackageReference Include="System.ValueTuple" Version="4.6.1" />
+    <PackageReference Include="System.ValueTuple" Version="4.6.2" />
   </ItemGroup>
   <ItemGroup Label="OpenTelemetry">
     <ProjectReference Include="..\..\..\src\C3D\Extensions\SystemWeb\OpenTelemetry\Application\C3D.Extensions.SystemWeb.OpenTelemetry.Application.csproj" />
