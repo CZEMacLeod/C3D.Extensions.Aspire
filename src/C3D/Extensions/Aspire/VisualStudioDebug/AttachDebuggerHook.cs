@@ -201,7 +201,7 @@ internal class AttachDebuggerHook : BackgroundService
 
     private async Task ShowProcessesAsync(VisualStudioInstance vs, string transport, string? qualifier)
     {
-        if (options.Value.ShowProcesses)
+        if (options.Value.ShowProcesses && logger.IsEnabled(LogLevel.Information))
         {
             var availableProcesses = await vs.GetDebugProcessesAsync(transport, qualifier);
             foreach (var process in availableProcesses)
@@ -213,7 +213,7 @@ internal class AttachDebuggerHook : BackgroundService
 
     private async Task ShowTransportsAsync(VisualStudioInstance vs)
     {
-        if (options.Value.ShowTransports)
+        if (options.Value.ShowTransports && logger.IsEnabled(LogLevel.Information))
         {
             var availableTransports = await vs.GetDebugTransportsAsync();
             foreach (var transport in availableTransports)
@@ -225,7 +225,7 @@ internal class AttachDebuggerHook : BackgroundService
 
     private async Task ShowEnginesAsync(VisualStudioInstance vs, string transport)
     {
-        if (options.Value.ShowEngines)
+        if (options.Value.ShowEngines && logger.IsEnabled(LogLevel.Information))
         {
             var availableEngines = await vs.GetDebugEnginesAsync(transport);
             foreach (var engine in availableEngines)

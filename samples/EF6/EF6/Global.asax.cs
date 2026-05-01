@@ -112,10 +112,7 @@ namespace EF6WebApp
                     tracing
                         .AddAspNetInstrumentation()
                         .AddHttpClientInstrumentation()
-                        .AddSqlClientInstrumentation(
-                            options => options.SetDbStatementForText = 
-                                (configuration.GetValue<string>("Environment") == "Development")
-                        )
+                        .AddSqlClientInstrumentation()
                         ;
                 })
                 .WithMetrics(metrics=>
