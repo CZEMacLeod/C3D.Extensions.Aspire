@@ -20,7 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting" Version="13.1.0" />
+    <PackageReference Include="Aspire.Hosting" Version="13.1.3" />
+    <PackageReference Include="MessagePack" Version="2.5.301" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\VisualStudioDebug\C3D.Extensions.VisualStudioDebug.csproj" />
